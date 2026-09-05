@@ -61,7 +61,10 @@ header("Expires: 0");
 
         /* GRID */
         .listings{max-width:1200px;margin:0 auto;padding:24px 32px;flex:1}
-        .card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px}
+        .card-grid{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:auto;gap:20px}
+        @media(max-width:1200px){.card-grid{grid-template-columns:repeat(3,1fr)}}
+        @media(max-width:900px){.card-grid{grid-template-columns:repeat(2,1fr)}}
+        @media(max-width:600px){.card-grid{grid-template-columns:1fr}}
         .card{background:#fff;border-radius:14px;overflow:hidden;border:1px solid #f1f5f9;transition:all .3s;position:relative}
         .card:hover{transform:translateY(-4px);box-shadow:0 12px 30px rgba(0,0,0,.08);border-color:#e2e8f0}
         .card-img{position:relative;height:210px;overflow:hidden}
@@ -98,7 +101,6 @@ header("Expires: 0");
             .navbar{padding:12px 16px}
             .search-section{padding:16px}
             .listings{padding:16px}
-            .card-grid{grid-template-columns:1fr}
             .search-form{flex-direction:column}
             .search-form select,.search-form input{width:100%}
         }
@@ -112,6 +114,7 @@ header("Expires: 0");
         </a>
         <div class="nav-right">
             <?php if(isset($_SESSION['user_id'])): ?>
+                <a href="post_house.php" class="btn-accent"><i class="fas fa-plus"></i> New Posts</a>
                 <div class="user-avatar-wrap">
                     <div class="user-avatar"><?php echo strtoupper(substr($_SESSION['user_name'] ?? 'U', 0, 1)); ?></div>
                     <div class="user-dropdown">

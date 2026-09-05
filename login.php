@@ -26,7 +26,7 @@ if(isset($_POST['login'])){
                 $_SESSION['is_admin'] = (int)$user['is_admin'];
                 header("Location: admin_panel.php");
             } else {
-                header("Location: manage_houses.php");
+                header("Location: index.php");
             }
             exit();
         } else {

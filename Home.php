@@ -19,13 +19,16 @@ html{scroll-behavior:smooth}
 body{font-family:'Inter',system-ui,-apple-system,sans-serif;color:#1e293b;overflow-x:hidden}
 
 /* NAVBAR */
-.navbar{position:fixed;top:0;left:0;right:0;z-index:1000;padding:16px 40px;display:flex;justify-content:space-between;align-items:center;transition:all .3s ease}
-.navbar.scrolled{background:rgba(15,23,42,.97);backdrop-filter:blur(12px);box-shadow:0 4px 30px rgba(0,0,0,.15);padding:12px 40px}
-.nav-brand{display:flex;align-items:center;gap:10px;text-decoration:none}
+.navbar{position:fixed;top:0;left:0;right:0;z-index:1000;padding:16px 40px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;background:#0f172a;box-shadow:0 4px 30px rgba(0,0,0,.15);transition:all .3s ease}
+.navbar.scrolled{padding:12px 40px}
+.nav-brand{display:flex;align-items:center;gap:10px;text-decoration:none;justify-self:start}
 .nav-brand-icon{width:40px;height:40px;background:linear-gradient(135deg,#0d9488,#14b8a6);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:18px}
 .nav-brand-text{color:#fff;font-size:20px;font-weight:800;letter-spacing:-.5px}
 .nav-brand-text span{color:#2dd4bf}
-.nav-links{display:flex;align-items:center;gap:8px}
+.nav-links{display:flex;align-items:center;gap:8px;justify-self:end}
+.nav-center{display:flex;align-items:center;gap:4px;justify-self:center;border-radius:12px;padding:4px;backdrop-filter:blur(10px)}
+.nav-center a{color:rgba(255,255,255,.75);text-decoration:none;font-size:14px;font-weight:500;padding:8px 18px;border-radius:10px;transition:all .2s}
+.nav-center a:hover{color:#fff;background:rgba(255,255,255,.12)}
 .nav-links a{color:rgba(255,255,255,.85);text-decoration:none;font-size:14px;font-weight:500;padding:8px 16px;border-radius:8px;transition:all .2s}
 .nav-links a:hover{color:#fff;background:rgba(255,255,255,.1)}
 .nav-links .btn-nav{background:linear-gradient(135deg,#0d9488,#14b8a6);color:#fff;padding:10px 22px;border-radius:10px;font-weight:600}
@@ -130,6 +133,11 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;color:#1e293b;overfl
         <div class="nav-brand-icon">AR</div>
         <div class="nav-brand-text">Adama<span>Rent</span></div>
     </a>
+    <div class="nav-center">
+        <a href="#property-types">Property Types</a>
+        <a href="#how-it-works">How It Works</a>
+        <a href="#contact">Contact</a>
+    </div>
     <div class="nav-links">
         <?php if(isset($_SESSION['user_id'])): ?>
             <div class="user-avatar-wrap">
@@ -160,7 +168,7 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;color:#1e293b;overfl
         <h1>Find Your Perfect <span>Rental Home</span> in Adama</h1>
         <p>The trusted digital marketplace connecting landlords and tenants across Adama City. Search, compare, and secure your next property.</p>
         <div class="hero-actions">
-            <a href="index.php" class="btn-hero btn-hero-primary"><i class="fas fa-search"></i> Search Properties</a>
+            <a href="index.php" class="btn-hero btn-hero-primary"><i class="fas fa-search"></i> Get Started</a>
             <a href="<?php echo isset($_SESSION['user_id']) ? 'post_house.php' : 'register.php'; ?>" class="btn-hero btn-hero-secondary"><i class="fas fa-plus-circle"></i> List Your Property</a>
         </div>
     </div>
@@ -174,8 +182,8 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;color:#1e293b;overfl
         <div class="stat-item"><h3><?php echo $total_tenants ?>+</h3><p>Happy Tenants</p></div>
     </div>
 </section>
-p
-<section class="categories">
+
+<section class="categories" id="property-types">
     <div class="section-header">
         <div class="tag">Property Types</div>
         <h2>Browse by Category</h2>
@@ -200,7 +208,7 @@ p
     </div>
 </section>
 
-<section class="how-it-works">
+<section class="how-it-works" id="how-it-works">
     <div class="section-header">
         <div class="tag">How It Works</div>
         <h2>Simple as 1-2-3</h2>
@@ -208,7 +216,7 @@ p
     <div class="steps-grid">
         <div class="step">
             <div class="step-number">1</div>
-            <h3>Search Properties</h3>
+            <h3>Get Started</h3>
             <p>Browse listings by category, location, and price range to find your ideal property.</p>
         </div>
         <div class="step">
@@ -224,7 +232,7 @@ p
     </div>
 </section>
 
-<footer class="footer">
+<footer class="footer" id="contact">
     <div class="footer-grid">
         <div class="footer-brand">
             <h3>Adama<span>Rent</span></h3>
