@@ -59,6 +59,8 @@ tr:hover td{background:#fafbfc}
 .btn-icon-view:hover{background:#0284c7;color:#fff}
 .btn-icon-promote{background:rgba(139,92,246,.1);color:#7c3aed}
 .btn-icon-promote:hover{background:#7c3aed;color:#fff}
+.btn-icon-revoke{background:rgba(245,158,11,.1);color:#d97706}
+.btn-icon-revoke:hover{background:#d97706;color:#fff}
 
 /* Flash messages */
 .flash{padding:14px 18px;border-radius:10px;font-size:14px;font-weight:500;margin-bottom:20px;display:flex;align-items:center;gap:10px}

@@ -31,6 +31,9 @@ $flash = [
     'no_self_delete'  => ['You cannot delete your own account.', 'red'],
     'no_super_delete' => ['You cannot delete a super admin account.', 'red'],
     'invited'         => ['Admin invite generated.', 'green'],
+    'revoked'         => ['Admin role revoked. User is now a landlord.', 'green'],
+    'no_self_revoke'  => ['You cannot revoke your own admin role.', 'red'],
+    'no_revoke_super' => ['You cannot revoke another super admin.', 'red'],
 ];
 $msg = isset($_GET['msg'], $flash[$_GET['msg']]) ? $flash[$_GET['msg']] : null;
 ?>
@@ -108,6 +111,11 @@ $msg = isset($_GET['msg'], $flash[$_GET['msg']]) ? $flash[$_GET['msg']] : null;
                     <td>
                         <?php if($target_id != $my_id && $target_rank == 0): ?>
                             <a href="admin_invite.php" class="btn btn-sm btn-icon-promote" title="Generate an invite key to make this user an admin"><i class="fas fa-user-shield"></i> Invite as Admin</a>
+                        <?php elseif($target_id != $my_id && $target_rank == 1): ?>
+                            <form action="revoke_admin.php" method="POST" style="display:inline" onsubmit="return confirm('Revoke this user\'s admin role? They will become a landlord.')">
+                                <input type="hidden" name="user_id" value="<?php echo $target_id; ?>">
+                                <button type="submit" class="btn btn-sm btn-icon-revoke" title="Revoke admin role"><i class="fas fa-user-slash"></i> Revoke Admin</button>
+                            </form>
                         <?php elseif($target_id != $my_id): ?>
                             <span style="font-size:12px;color:#94a3b8">Already admin</span>
                         <?php endif; ?>
