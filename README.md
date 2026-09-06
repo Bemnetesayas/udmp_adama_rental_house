@@ -76,3 +76,5 @@ The site loads the landing page (Home). Click **Browse** to see/search propertie
 ---
 
 **Need help?** Check the Apache/MySQL logs via the XAMPP Control Panel ("Logs" button), or open an issue on the repository.
+
+
