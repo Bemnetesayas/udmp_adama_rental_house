@@ -37,8 +37,17 @@ if($query && mysqli_num_rows($query) > 0){
         if(!empty($data['image']) && file_exists("uploads/" . $data['image'])){
             unlink("uploads/" . $data['image']);
         }
+        $imgs = mysqli_query($conn, "SELECT filename FROM house_images WHERE house_id = $id");
+        if($imgs && mysqli_num_rows($imgs) > 0){
+            while($im = mysqli_fetch_assoc($imgs)){
+                if(!empty($im['filename']) && file_exists("uploads/" . $im['filename'])){
+                    @unlink("uploads/" . $im['filename']);
+                }
+            }
+        }
         mysqli_query($conn, "DELETE FROM requests WHERE house_id = $id");
         mysqli_query($conn, "DELETE FROM rental_requests WHERE house_id = $id");
+        mysqli_query($conn, "DELETE FROM house_images WHERE house_id = $id");
         mysqli_query($conn, "DELETE FROM houses WHERE id = $id");
         $status = ['type' => 'success', 'message' => 'Post removed successfully.', 'title' => 'Listing deleted', 'redirect' => 'manage_houses.php'];
     } else {

@@ -40,6 +40,15 @@ CREATE TABLE IF NOT EXISTS requests (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS house_images (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    house_id INT NOT NULL,
+    filename VARCHAR(255) NOT NULL,
+    sort_order INT DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_house (house_id)
+);
+
 CREATE TABLE IF NOT EXISTS admin_invites (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,

@@ -116,7 +116,7 @@ if(isset($_SESSION['user_id'])){
         @media(max-width:1200px){.card-grid{grid-template-columns:repeat(3,1fr)}}
         @media(max-width:900px){.card-grid{grid-template-columns:repeat(2,1fr)}}
         @media(max-width:600px){.card-grid{grid-template-columns:1fr}}
-        .card{background:#fff;border-radius:14px;overflow:hidden;border:1px solid #f1f5f9;transition:all .3s;position:relative}
+        .card{background:#fff;border-radius:14px;overflow:hidden;border:1px solid #f1f5f9;transition:all .3s;position:relative;cursor:pointer}
         .card:hover{transform:translateY(-4px);box-shadow:0 12px 30px rgba(0,0,0,.08);border-color:#e2e8f0}
         .card-img{position:relative;height:210px;overflow:hidden}
         .card-img img{width:100%;height:100%;object-fit:cover;background:#f1f5f9}
@@ -141,9 +141,6 @@ if(isset($_SESSION['user_id'])){
         .btn-rent{background:linear-gradient(135deg,#0d9488,#14b8a6);color:#fff}
         .btn-rent:hover{box-shadow:0 4px 15px rgba(13,148,136,.4);transform:translateY(-1px)}
         .phone-hidden{background:#f8f9fa;color:#9ca3af;padding:7px 12px;border-radius:8px;font-size:12px;font-weight:500}
-        .video-overlay{position:absolute;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;transition:opacity .3s}
-        .card-img:hover .video-overlay{opacity:1}
-        .video-play{width:48px;height:48px;background:rgba(255,255,255,.95);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#0f172a;font-size:16px}
 
         .empty-state{text-align:center;padding:80px 20px;grid-column:1/-1}
         .empty-state i{font-size:48px;color:#d1d5db;margin-bottom:16px}
@@ -294,16 +291,11 @@ if(isset($_SESSION['user_id'])){
                     $status = $row['status'] ?? 'Available';
                     $badgeClass = ($status == 'Rented') ? 'badge-rented' : 'badge-available'; 
             ?> 
-                <div class="card">
+                <div class="card" data-href="house_detail.php?house=<?php echo (int)$row['id']; ?>">
                     <div class="card-img">
                         <img src="uploads/<?php echo htmlspecialchars($row['image']); ?>" alt="Property" loading="lazy">
                         <span class="card-badge <?php echo $badgeClass; ?>"><?php echo htmlspecialchars($status); ?></span>
                         <span class="card-category"><?php echo htmlspecialchars($row['category']); ?></span>
-                        <?php if(!empty($row['video_file']) && $status == 'Available'): ?>
-                            <div class="video-overlay" onclick="startVideo(this, 'uploads/<?php echo htmlspecialchars($row['video_file']); ?>')">
-                                <div class="video-play"><i class="fas fa-play"></i></div>
-                            </div>
-                        <?php endif; ?>
                     </div>
                     <div class="card-body">
                         <div class="card-price"><?php echo number_format($row['amount']); ?> <span>ETB/month</span></div>
@@ -338,9 +330,13 @@ if(isset($_SESSION['user_id'])){
     </div>
 
     <script>
-    function startVideo(container, videoSrc) {
-        container.innerHTML = '<video width="100%" height="210" controls autoplay style="object-fit:cover;border-radius:14px 14px 0 0"><source src="'+videoSrc+'" type="video/mp4"></video>';
-    }
+    document.querySelectorAll('.card').forEach(function(card){
+        card.addEventListener('click', function(e){
+            if(e.target.closest('a')) return;
+            var href = card.getAttribute('data-href');
+            if(href) window.location = href;
+        });
+    });
 
     function toggleNotif(btn){
         var wrap = btn.closest('.bell-wrap');

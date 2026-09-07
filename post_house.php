@@ -211,27 +211,17 @@ if(!isset($_SESSION['user_id'])){
                     </div>
                 </div>
 
-                <!-- Media -->
+                <!-- Photos -->
                 <div class="form-section">
-                    <div class="form-section-title"><i class="fas fa-camera"></i> Photos & Media</div>
+                    <div class="form-section-title"><i class="fas fa-camera"></i> Photos</div>
                     <div class="form-group">
-                        <label>Property Photo <span class="req">*</span></label>
+                        <label>Property Photos <span class="req">*</span></label>
                         <div class="file-upload" onclick="this.querySelector('input').click()">
-                            <i class="fas fa-cloud-arrow-up"></i>
-                            <p>Click to upload a photo</p>
-                            <span>JPG, PNG or WebP (max 5MB)</span>
+                            <i class="fas fa-images"></i>
+                            <p>Click to upload photos</p>
+                            <span>JPG, PNG, WebP or GIF &middot; the first photo becomes the cover &middot; up to 6 photos (5MB each)</span>
                             <div class="file-name" id="img-name"></div>
-                            <input type="file" name="house_image" accept="image/*" required onchange="document.getElementById('img-name').textContent=this.files[0].name; document.getElementById('img-name').style.display='block'">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Video Tour (Optional)</label>
-                        <div class="file-upload" onclick="this.querySelector('input').click()">
-                            <i class="fas fa-video"></i>
-                            <p>Click to upload a video</p>
-                            <span>MP4 or MOV (optional)</span>
-                            <div class="file-name" id="vid-name"></div>
-                            <input type="file" name="house_video" accept="video/mp4,video/x-m4v,video/*" onchange="document.getElementById('vid-name').textContent=this.files[0].name; document.getElementById('vid-name').style.display='block'">
+                            <input type="file" name="house_photos[]" accept="image/*" multiple required onchange="updatePhotoList(this)">
                         </div>
                     </div>
                 </div>
@@ -268,6 +258,19 @@ if(!isset($_SESSION['user_id'])){
     kebeleInput.addEventListener('input', updateMapLink);
     streetInput.addEventListener('input', updateMapLink);
     houseNumInput.addEventListener('input', updateMapLink);
+
+    function updatePhotoList(input){
+        var el = document.getElementById('img-name');
+        var n = input.files.length;
+        if(n === 0){
+            el.style.display = 'none';
+            return;
+        }
+        var names = [];
+        for(var i = 0; i < n; i++) names.push(input.files[i].name);
+        el.textContent = n + (n > 1 ? ' photos' : ' photo') + ' selected: ' + names.join(', ');
+        el.style.display = 'block';
+    }
     </script>
 
     <?php
@@ -290,44 +293,81 @@ if(!isset($_SESSION['user_id'])){
         $desc     = mysqli_real_escape_string($conn, $_POST['desc']);
         $user_id  = $_SESSION['user_id'];
 
-        $videoName = "";
-        if(!empty($_FILES['house_video']['name'])){
-            $videoName = time() . "_v_" . basename($_FILES['house_video']['name']);
-            @move_uploaded_file($_FILES['house_video']['tmp_name'], $upload_dir . "/" . $videoName);
-        }
-
-        $imgName = time() . "_" . basename($_FILES['house_image']['name']);
-        $target = $upload_dir . "/" . $imgName;
-
-        if($_FILES['house_image']['error'] !== UPLOAD_ERR_OK){
-            $err_code = $_FILES['house_image']['error'];
-            $err_msg = match($err_code){
-                UPLOAD_ERR_INI_SIZE   => 'File exceeds server upload limit.',
-                UPLOAD_ERR_FORM_SIZE  => 'File exceeds form upload limit.',
-                UPLOAD_ERR_PARTIAL    => 'File was only partially uploaded.',
-                UPLOAD_ERR_NO_FILE    => 'No file was uploaded.',
-                UPLOAD_ERR_NO_TMP_DIR => 'Missing temporary folder on server.',
-                UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk.',
-                UPLOAD_ERR_EXTENSION  => 'Upload blocked by server extension.',
-                default               => 'Unknown upload error (code: ' . $err_code . ').'
-            };
-            $toast_error = 'Upload failed: ' . $err_msg;
+        if(empty($_FILES['house_photos']['name'][0])){
+            $toast_error = 'Upload failed: Please select at least one photo.';
         } elseif(!is_writable($upload_dir)){
             $toast_error = 'Upload failed: The uploads folder is not writable. Check permissions.';
-        } elseif(move_uploaded_file($_FILES['house_image']['tmp_name'], $target)){
-            $sql = "INSERT INTO houses (kebele, street, house_number, category, amount, phone, map_link, image, description, user_id, video_file, status, is_approved, created_at) 
-                    VALUES ('$kebele', '$street', '$h_num', '$category', '$amount', '$phone', '$map', '$imgName', '$desc', $user_id, '$videoName', 'Pending', 0, NOW())";
-            
-            if(mysqli_query($conn, $sql)){
-                $house_id = mysqli_insert_id($conn);
-                $req_sql = "INSERT INTO requests (user_id, house_id, status, created_at) VALUES ($user_id, $house_id, 0, NOW())";
-                mysqli_query($conn, $req_sql);
-                $submitted = true;
-            } else {
-                $toast_error = 'Database error. Please try again.';
-            }
         } else {
-            $toast_error = 'Upload failed: move_uploaded_file returned false. Check server error log.';
+            $photos  = $_FILES['house_photos'];
+            $names   = [];
+            $allowed = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+            $total   = count($photos['name']);
+
+            for($i = 0; $i < $total; $i++){
+                if(empty($photos['name'][$i])) continue;
+
+                if($photos['error'][$i] !== UPLOAD_ERR_OK){
+                    $err_msg = match($photos['error'][$i]){
+                        UPLOAD_ERR_INI_SIZE   => 'File exceeds server upload limit.',
+                        UPLOAD_ERR_FORM_SIZE  => 'File exceeds form upload limit.',
+                        UPLOAD_ERR_PARTIAL    => 'a file was only partially uploaded.',
+                        UPLOAD_ERR_NO_TMP_DIR => 'Missing temporary folder on server.',
+                        UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk.',
+                        UPLOAD_ERR_EXTENSION  => 'Upload blocked by server extension.',
+                        default               => 'Unknown upload error (code: ' . $photos['error'][$i] . ').'
+                    };
+                    $toast_error = 'Upload failed: ' . $err_msg;
+                    break;
+                }
+
+                $ext = strtolower(pathinfo($photos['name'][$i], PATHINFO_EXTENSION));
+                if(!in_array($ext, $allowed, true)){
+                    $toast_error = 'Upload failed: Only JPG, PNG, WebP or GIF photos are allowed.';
+                    break;
+                }
+
+                $fname  = time() . '_' . bin2hex(random_bytes(4)) . '_' . basename($photos['name'][$i]);
+                $target = $upload_dir . '/' . $fname;
+
+                if(move_uploaded_file($photos['tmp_name'][$i], $target)){
+                    $names[] = $fname;
+                } else {
+                    $toast_error = 'Upload failed: move_uploaded_file returned false. Check server error log.';
+                    break;
+                }
+
+                if(count($names) >= 6) break;
+            }
+
+            if($toast_error){
+                foreach($names as $f){
+                    @unlink($upload_dir . '/' . $f);
+                }
+            } elseif(empty($names)){
+                $toast_error = 'Upload failed: No valid photos were processed.';
+            } else {
+                $featured = array_shift($names);
+                $sql = "INSERT INTO houses (kebele, street, house_number, category, amount, phone, map_link, image, description, user_id, status, is_approved, created_at) 
+                        VALUES ('$kebele', '$street', '$h_num', '$category', '$amount', '$phone', '$map', '$featured', '$desc', $user_id, 'Pending', 0, NOW())";
+
+                if(mysqli_query($conn, $sql)){
+                    $house_id = mysqli_insert_id($conn);
+                    $req_sql = "INSERT INTO requests (user_id, house_id, status, created_at) VALUES ($user_id, $house_id, 0, NOW())";
+                    mysqli_query($conn, $req_sql);
+                    $order = 1;
+                    foreach($names as $fn){
+                        mysqli_query($conn, "INSERT INTO house_images (house_id, filename, sort_order) VALUES ($house_id, '$fn', $order)");
+                        $order++;
+                    }
+                    $submitted = true;
+                } else {
+                    foreach($names as $f){
+                        @unlink($upload_dir . '/' . $f);
+                    }
+                    @unlink($upload_dir . '/' . $featured);
+                    $toast_error = 'Database error. Please try again.';
+                }
+            }
         }
     }
     ?>

@@ -49,6 +49,15 @@ if (!$conn) {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )");
 
+    mysqli_query($conn, "CREATE TABLE IF NOT EXISTS house_images (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        house_id INT NOT NULL,
+        filename VARCHAR(255) NOT NULL,
+        sort_order INT DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_house (house_id)
+    )");
+
     mysqli_query($conn, "CREATE TABLE IF NOT EXISTS app_config (
         config_key VARCHAR(100) PRIMARY KEY,
         config_value TEXT
