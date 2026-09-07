@@ -107,6 +107,7 @@ foreach($rental_reqs as $r){ if($r['req_status'] === 'pending') $pending_req_cou
         .card-actions a,.card-actions button{padding:10px;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none;border:none;cursor:pointer;transition:all .2s;text-align:center;font-family:inherit}
         .btn-toggle{background:#f1f5f9;color:#475569}
         .btn-toggle:hover{background:#e2e8f0}
+        .btn-disabled{background:#f8fafc;color:#94a3b8;cursor:not-allowed;opacity:.7}
         .btn-edit{background:rgba(245,158,11,.1);color:#d97706}
         .btn-edit:hover{background:#f59e0b;color:#fff}
         .btn-delete{background:rgba(239,68,68,.08);color:#dc2626;border:1px solid rgba(239,68,68,.2)}
@@ -126,6 +127,7 @@ foreach($rental_reqs as $r){ if($r['req_status'] === 'pending') $pending_req_cou
         .req-status.pending{background:rgba(245,158,11,.12);color:#d97706}
         .req-status.accepted{background:rgba(16,185,129,.12);color:#059669}
         .req-status.rejected{background:rgba(239,68,68,.12);color:#dc2626}
+        .req-status.completed{background:rgba(100,116,139,.12);color:#64748b}
         .req-actions{display:flex;gap:8px;flex-shrink:0}
         .req-actions a{padding:9px 16px;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;transition:all .2s;border:none;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-family:inherit}
         .btn-accept{background:linear-gradient(135deg,#10b981,#059669);color:#fff}
@@ -214,7 +216,9 @@ foreach($rental_reqs as $r){ if($r['req_status'] === 'pending') $pending_req_cou
         </div>
 
         <?php if(isset($_GET['msg'])):
-            if($_GET['msg'] == 'accepted'): ?>
+            if($_GET['msg'] == 'status_saved'): ?>
+                <div class="flash flash-ok"><i class="fas fa-check-circle"></i> Listing status updated.</div>
+            <?php elseif($_GET['msg'] == 'accepted'): ?>
                 <div class="flash flash-ok"><i class="fas fa-check-circle"></i> Rental request accepted. The tenant has been notified and the property is marked as rented.</div>
             <?php elseif($_GET['msg'] == 'rejected'): ?>
                 <div class="flash flash-err"><i class="fas fa-circle-xmark"></i> Rental request declined. The tenant has been notified.</div>
@@ -278,9 +282,15 @@ foreach($rental_reqs as $r){ if($r['req_status'] === 'pending') $pending_req_cou
                             Kebele <?php echo htmlspecialchars($row['kebele']); ?>, <?php echo htmlspecialchars($row['street']); ?>
                         </div>
                         <div class="card-actions">
-                            <a href="toggle_status.php?id=<?php echo $row['id']; ?>" class="btn-toggle">
-                                <i class="fas fa-sync-alt"></i> <?php echo ($status=='Available') ? 'Mark Rented' : 'Mark Available'; ?>
-                            </a>
+                            <?php if($status === 'Available' || strcasecmp($status,'Rented')===0): ?>
+                                <a href="toggle_status.php?id=<?php echo (int)$row['id']; ?>" class="btn-toggle">
+                                    <i class="fas fa-sync-alt"></i> <?php echo ($status=='Available') ? 'Mark Rented' : 'Mark Available'; ?>
+                                </a>
+                            <?php elseif(strcasecmp($status,'Pending')===0): ?>
+                                <span class="btn-toggle btn-disabled"><i class="fas fa-clock"></i> Awaiting Approval</span>
+                            <?php else: ?>
+                                <span class="btn-toggle btn-disabled"><i class="fas fa-ban"></i> Not Available</span>
+                            <?php endif; ?>
                             <a href="edit_house.php?id=<?php echo $row['id']; ?>" class="btn-edit">
                                 <i class="fas fa-edit"></i> Edit
                             </a>
