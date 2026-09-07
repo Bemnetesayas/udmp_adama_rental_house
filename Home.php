@@ -134,8 +134,9 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;color:#1e293b;overfl
         <div class="nav-brand-text">Adama<span>Rent</span></div>
     </a>
     <div class="nav-center">
-        <a href="#property-types">Property Types</a>
-        <a href="#how-it-works">How It Works</a>
+        <a href="index.php">Home</a>
+        <a href="#property-types">Property types</a>
+        <a href="#how-it-works">How it works</a>
         <a href="#contact">Contact</a>
     </div>
     <div class="nav-links">

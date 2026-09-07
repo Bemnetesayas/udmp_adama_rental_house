@@ -80,6 +80,37 @@ if(!isset($_SESSION['user_id'])){
 
         .error-msg{background:#fef2f2;border:1px solid #fecaca;color:#dc2626;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:500;margin-bottom:20px;display:flex;align-items:center;gap:10px}
 
+        /* SUCCESS MODAL */
+        .ph-overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,.65);backdrop-filter:blur(4px);z-index:10000;align-items:center;justify-content:center;padding:20px;animation:phFade .25s ease}
+        .ph-overlay.ph-active{display:flex}
+        @keyframes phFade{from{opacity:0}to{opacity:1}}
+        .ph-card{background:#fff;border-radius:20px;max-width:430px;width:100%;padding:38px 34px;box-shadow:0 25px 60px rgba(0,0,0,.3);text-align:center;animation:phPop .35s cubic-bezier(.34,1.56,.64,1)}
+        @keyframes phPop{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
+        .ph-icon{width:76px;height:76px;margin:0 auto 20px;border-radius:50%;background:linear-gradient(135deg,#10b981,#059669);color:#fff;display:flex;align-items:center;justify-content:center;font-size:30px;box-shadow:0 10px 25px rgba(16,185,129,.35)}
+        .ph-card h2{font-size:22px;font-weight:800;color:#0f172a;margin-bottom:10px;letter-spacing:-.4px}
+        .ph-card p{font-size:14px;color:#64748b;line-height:1.6;margin-bottom:26px}
+        .ph-steps{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:28px}
+        .ph-step{display:flex;flex-direction:column;align-items:center;gap:6px;width:80px}
+        .ph-step .ph-dot{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;background:#f1f5f9;color:#94a3b8;font-weight:700}
+        .ph-step.done .ph-dot{background:#10b981;color:#fff}
+        .ph-step.active .ph-dot{background:linear-gradient(135deg,#0d9488,#14b8a6);color:#fff;box-shadow:0 5px 14px rgba(13,148,136,.4)}
+        .ph-step span{font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.3px}
+        .ph-step.done span,.ph-step.active span{color:#0f172a}
+        .ph-bar{width:26px;height:2px;background:#e2e8f0;margin-bottom:22px}
+        .ph-bar.done{background:#10b981}
+        .ph-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+        .ph-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:13px 16px;border-radius:11px;font-size:14px;font-weight:700;cursor:pointer;transition:all .25s;border:none;font-family:inherit;text-decoration:none}
+        .ph-btn-primary{background:linear-gradient(135deg,#0d9488,#14b8a6);color:#fff}
+        .ph-btn-primary:hover{box-shadow:0 6px 18px rgba(13,148,136,.4);transform:translateY(-1px)}
+        .ph-btn-ghost{background:#f1f5f9;color:#334155}
+        .ph-btn-ghost:hover{background:#e2e8f0}
+        @media(max-width:480px){
+            .ph-actions{grid-template-columns:1fr}
+            .ph-steps{gap:4px}
+            .ph-step{width:70px}
+            .ph-bar{width:18px}
+        }
+
         @media(max-width:640px){
             .form-row{grid-template-columns:1fr}
             .form-page{padding:0 12px;margin:20px auto}
@@ -240,6 +271,9 @@ if(!isset($_SESSION['user_id'])){
     </script>
 
     <?php
+    $toast_error = null;
+    $submitted = false;
+
     if(isset($_POST['submit'])){
         $upload_dir = __DIR__ . '/uploads';
         if (!is_dir($upload_dir)) {
@@ -277,9 +311,9 @@ if(!isset($_SESSION['user_id'])){
                 UPLOAD_ERR_EXTENSION  => 'Upload blocked by server extension.',
                 default               => 'Unknown upload error (code: ' . $err_code . ').'
             };
-            echo "<script>alert('Upload failed: " . addslashes($err_msg) . "');</script>";
+            $toast_error = 'Upload failed: ' . $err_msg;
         } elseif(!is_writable($upload_dir)){
-            echo "<script>alert('Upload failed: The uploads folder is not writable. Check permissions.');</script>";
+            $toast_error = 'Upload failed: The uploads folder is not writable. Check permissions.';
         } elseif(move_uploaded_file($_FILES['house_image']['tmp_name'], $target)){
             $sql = "INSERT INTO houses (kebele, street, house_number, category, amount, phone, map_link, image, description, user_id, video_file, status, is_approved, created_at) 
                     VALUES ('$kebele', '$street', '$h_num', '$category', '$amount', '$phone', '$map', '$imgName', '$desc', $user_id, '$videoName', 'Pending', 0, NOW())";
@@ -288,14 +322,39 @@ if(!isset($_SESSION['user_id'])){
                 $house_id = mysqli_insert_id($conn);
                 $req_sql = "INSERT INTO requests (user_id, house_id, status, created_at) VALUES ($user_id, $house_id, 0, NOW())";
                 mysqli_query($conn, $req_sql);
-                echo "<script>alert('Property submitted for approval! It will appear once reviewed by an admin.'); window.location='manage_houses.php';</script>";
+                $submitted = true;
             } else {
-                echo "<script>alert('Database error. Please try again.');</script>";
+                $toast_error = 'Database error. Please try again.';
             }
         } else {
-            echo "<script>alert('Upload failed: move_uploaded_file returned false. Check server error log.');</script>";
+            $toast_error = 'Upload failed: move_uploaded_file returned false. Check server error log.';
         }
     }
     ?>
+
+    <?php include(__DIR__ . '/popup.php'); ?>
+
+    <?php if($submitted): ?>
+    <div class="ph-overlay ph-active" id="phSuccess">
+        <div class="ph-card">
+            <div class="ph-icon"><i class="fas fa-check"></i></div>
+            <h2>Submitted for Approval</h2>
+            <p>Your property is now in review. Once an admin approves it, it will go live on the marketplace.</p>
+            <div class="ph-steps">
+                <div class="ph-step done"><div class="ph-dot"><i class="fas fa-check"></i></div><span>Submitted</span></div>
+                <div class="ph-bar done"></div>
+                <div class="ph-step active"><div class="ph-dot"><i class="fas fa-clock"></i></div><span>In Review</span></div>
+                <div class="ph-bar"></div>
+                <div class="ph-step"><div class="ph-dot"><i class="fas fa-home"></i></div><span>Live</span></div>
+            </div>
+            <div class="ph-actions">
+                <a href="post_house.php" class="ph-btn ph-btn-ghost"><i class="fas fa-plus"></i> Add Another</a>
+                <a href="manage_houses.php" class="ph-btn ph-btn-primary"><i class="fas fa-th-large"></i> Go to Dashboard</a>
+            </div>
+        </div>
+    </div>
+    <?php elseif($toast_error): ?>
+        <script>window.addEventListener('DOMContentLoaded', function(){ showToast(<?php echo json_encode($toast_error); ?>, "error", "Upload failed"); });</script>
+    <?php endif; ?>
 </body>
 </html>

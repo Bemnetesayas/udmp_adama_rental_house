@@ -26,7 +26,14 @@ if(isset($_POST['login'])){
                 $_SESSION['is_admin'] = (int)$user['is_admin'];
                 header("Location: admin_panel.php");
             } else {
-                header("Location: index.php");
+                // If a redirect target was requested (e.g. rent flow), go there
+                $redirect = isset($_GET['redirect']) ? $_GET['redirect'] : '';
+                $safe_redirect = preg_replace('/[^a-zA-Z0-9_?&=.\-]/', '', $redirect);
+                if(!empty($safe_redirect) && strpos($safe_redirect, 'rent_request.php') !== false){
+                    header("Location: " . $safe_redirect);
+                } else {
+                    header("Location: index.php");
+                }
             }
             exit();
         } else {

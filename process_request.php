@@ -29,6 +29,8 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
             break;
 
         case 'delete_house':
+            mysqli_query($conn, "DELETE FROM requests WHERE house_id = $id");
+            mysqli_query($conn, "DELETE FROM rental_requests WHERE house_id = $id");
             mysqli_query($conn, "DELETE FROM houses WHERE id = $id");
             header("Location: admin_manage_houses.php?msg=deleted");
             break;

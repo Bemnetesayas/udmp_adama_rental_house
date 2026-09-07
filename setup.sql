@@ -40,6 +40,42 @@ CREATE TABLE IF NOT EXISTS requests (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS admin_invites (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    key_hash VARCHAR(255) NOT NULL,
+    status VARCHAR(20) DEFAULT 'pending',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_by INT
+);
+
+CREATE TABLE IF NOT EXISTS rental_requests (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    house_id INT NOT NULL,
+    status VARCHAR(20) DEFAULT 'pending',
+    message TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS notifications (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    type VARCHAR(20) NOT NULL DEFAULT 'info',
+    title VARCHAR(120) NOT NULL,
+    message TEXT,
+    link VARCHAR(255),
+    is_read TINYINT(1) NOT NULL DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_user_read (user_id, is_read)
+);
+
+CREATE TABLE IF NOT EXISTS app_config (
+    config_key VARCHAR(100) PRIMARY KEY,
+    config_value TEXT
+);
+
 -- NOTE: No admin account is created here for security.
 -- After running setup.php, visit the generated admin setup key page,
 -- then register your first account with that key to become admin.

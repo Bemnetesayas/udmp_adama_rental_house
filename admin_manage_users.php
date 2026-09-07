@@ -112,9 +112,9 @@ $msg = isset($_GET['msg'], $flash[$_GET['msg']]) ? $flash[$_GET['msg']] : null;
                         <?php if($target_id != $my_id && $target_rank == 0): ?>
                             <a href="admin_invite.php" class="btn btn-sm btn-icon-promote" title="Generate an invite key to make this user an admin"><i class="fas fa-user-shield"></i> Invite as Admin</a>
                         <?php elseif($target_id != $my_id && $target_rank == 1): ?>
-                            <form action="revoke_admin.php" method="POST" style="display:inline" onsubmit="return confirm('Revoke this user\'s admin role? They will become a landlord.')">
+                            <form action="revoke_admin.php" method="POST" style="display:inline" id="revoke-user-<?php echo $target_id; ?>">
                                 <input type="hidden" name="user_id" value="<?php echo $target_id; ?>">
-                                <button type="submit" class="btn btn-sm btn-icon-revoke" title="Revoke admin role"><i class="fas fa-user-slash"></i> Revoke Admin</button>
+                                <button type="button" class="btn btn-sm btn-icon-revoke" title="Revoke admin role" onclick="confirmRevokeAdmin(<?php echo $target_id; ?>)"><i class="fas fa-user-slash"></i> Revoke Admin</button>
                             </form>
                         <?php elseif($target_id != $my_id): ?>
                             <span style="font-size:12px;color:#94a3b8">Already admin</span>
@@ -126,9 +126,9 @@ $msg = isset($_GET['msg'], $flash[$_GET['msg']]) ? $flash[$_GET['msg']] : null;
                         <div style="display:flex;gap:6px">
                         <a href="edit_user.php?id=<?php echo $target_id; ?>" class="btn-icon btn-icon-edit" title="Edit"><i class="fas fa-edit"></i></a>
                         <?php if($target_id != $my_id): ?>
-                        <form action="delete_user.php" method="POST" style="display:inline" onsubmit="return confirm('Delete this user?')">
+                        <form action="delete_user.php" method="POST" style="display:inline" id="del-user-<?php echo $target_id; ?>">
                             <input type="hidden" name="user_id" value="<?php echo $target_id; ?>">
-                            <button type="submit" class="btn-icon btn-icon-del" title="Delete"><i class="fas fa-trash"></i></button>
+                            <button type="button" class="btn-icon btn-icon-del" title="Delete" onclick="confirmUserDelete(<?php echo $target_id; ?>)"><i class="fas fa-trash"></i></button>
                         </form>
                         <?php endif; ?>
                         </div>
@@ -139,5 +139,23 @@ $msg = isset($_GET['msg'], $flash[$_GET['msg']]) ? $flash[$_GET['msg']] : null;
         </table>
     </div>
 </div>
+<script>
+function confirmRevokeAdmin(id){
+    adamaConfirm({
+        title: "Revoke admin role",
+        message: "Revoke this user's admin role? They will become a landlord.",
+        confirmText: "Revoke",
+        onConfirm: function(){ document.getElementById('revoke-user-' + id).submit(); }
+    });
+}
+function confirmUserDelete(id){
+    adamaConfirm({
+        title: "Delete user",
+        message: "Delete this user permanently? This cannot be undone.",
+        confirmText: "Delete",
+        onConfirm: function(){ document.getElementById('del-user-' + id).submit(); }
+    });
+}
+</script>
 </body>
 </html>

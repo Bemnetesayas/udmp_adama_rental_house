@@ -14,6 +14,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
 </head>
 <body>
     <?php include(__DIR__ . '/sidebar.php'); ?>
+    <?php include(__DIR__ . '/popup.php'); ?>
 
 <script>
 (function(){

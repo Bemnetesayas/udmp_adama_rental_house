@@ -44,6 +44,9 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 
         // Delete their houses and requests (cleanup)
         mysqli_query($conn, "DELETE FROM requests WHERE user_id=$target_id");
+        mysqli_query($conn, "DELETE FROM requests WHERE house_id IN (SELECT id FROM houses WHERE user_id=$target_id)");
+        mysqli_query($conn, "DELETE FROM rental_requests WHERE house_id IN (SELECT id FROM houses WHERE user_id=$target_id)");
+        mysqli_query($conn, "DELETE FROM rental_requests WHERE user_id=$target_id");
         mysqli_query($conn, "DELETE FROM houses WHERE user_id=$target_id");
         mysqli_query($conn, "DELETE FROM admin_invites WHERE user_id=$target_id");
         mysqli_query($conn, "DELETE FROM users WHERE id=$target_id");
