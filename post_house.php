@@ -66,6 +66,16 @@ if(!isset($_SESSION['user_id'])){
         .form-group .hint{font-size:12px;color:#94a3b8;margin-top:4px}
         .form-group .map-auto{background:rgba(13,148,136,.06);color:#0d9488;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:500;display:none;margin-top:8px}
         .form-group .map-auto i{margin-right:4px}
+        .map-toggle{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:500;color:#475569;cursor:pointer;margin-top:8px;user-select:none}
+        .map-toggle input[type="checkbox"]{width:16px;height:16px;accent-color:#0d9488;cursor:pointer}
+
+        .amenity-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
+        .amenity-item{display:flex;align-items:center;gap:8px;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;cursor:pointer;transition:all .2s;background:#fff;font-size:13px;font-weight:500;color:#475569;user-select:none}
+        .amenity-item:hover{border-color:#0d9488;background:rgba(13,148,136,.03)}
+        .amenity-item input{display:none}
+        .amenity-item.checked{border-color:#0d9488;background:rgba(13,148,136,.06);color:#0d9488}
+        .amenity-item .amenity-icon{width:18px;text-align:center;font-size:13px;color:#94a3b8;transition:color .2s}
+        .amenity-item.checked .amenity-icon{color:#0d9488}
 
         .file-upload{border:2px dashed #e5e7eb;border-radius:12px;padding:28px;text-align:center;cursor:pointer;transition:all .3s;background:#fafbfc}
         .file-upload:hover{border-color:#0d9488;background:rgba(13,148,136,.03)}
@@ -75,7 +85,7 @@ if(!isset($_SESSION['user_id'])){
         .file-upload input{display:none}
         .file-name{font-size:13px;color:#0d9488;font-weight:600;margin-top:8px;display:none}
 
-        .btn-submit{width:100%;padding:14px;background:linear-gradient(135deg,#0d9488,#14b8a6);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .3s;margin-top:8px}
+        .btn-submit{width:100%;padding:14px;background:linear-gradient(135deg,#0d9488,#14b8a6);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .3s;margin-top:32px}
         .btn-submit:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(13,148,136,.4)}
 
         .error-msg{background:#fef2f2;border:1px solid #fecaca;color:#dc2626;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:500;margin-bottom:20px;display:flex;align-items:center;gap:10px}
@@ -171,7 +181,9 @@ if(!isset($_SESSION['user_id'])){
                         <input type="text" name="street" placeholder="e.g. Bole Road" required>
                     </div>
                     <div class="form-group">
-                        <input type="url" id="map_link" name="map_link" placeholder="Auto-generated Google Maps link" readonly style="background:#f8fafc">
+                        <label>Map Link</label>
+                        <input type="url" id="map_link" name="map_link" placeholder="Paste a Google Maps link here (optional)">
+                        <label class="map-toggle"><input type="checkbox" id="map_auto"> Auto-generate map link from location fields</label>
                         <div class="map-auto" id="auto-gen-note"><i class="fas fa-check-circle"></i> Auto-generated from location fields</div>
                     </div>
                 </div>
@@ -226,6 +238,24 @@ if(!isset($_SESSION['user_id'])){
                     </div>
                 </div>
 
+                <!-- Amenities -->
+                <div class="form-section">
+                    <div class="form-section-title"><i class="fas fa-star"></i> Amenities</div>
+                    <p style="font-size:13px;color:#94a3b8;margin-bottom:14px">Select all amenities that apply to your property</p>
+                    <div class="amenity-grid">
+                        <?php
+                        $amenities_result = mysqli_query($conn, "SELECT * FROM amenities ORDER BY sort_order ASC");
+                        while($amenity = mysqli_fetch_assoc($amenities_result)):
+                        ?>
+                        <label class="amenity-item">
+                            <input type="checkbox" name="amenities[]" value="<?php echo $amenity['id']; ?>">
+                            <span class="amenity-icon"><i class="<?php echo htmlspecialchars($amenity['icon']); ?>"></i></span>
+                            <?php echo htmlspecialchars($amenity['name']); ?>
+                        </label>
+                        <?php endwhile; ?>
+                    </div>
+                </div>
+
                 <button type="submit" name="submit" class="btn-submit"><i class="fas fa-paper-plane"></i> Submit for Approval</button>
             </form>
         </div>
@@ -233,12 +263,20 @@ if(!isset($_SESSION['user_id'])){
 
     <script>
     const kebeleInput = document.querySelector('input[name="kebele"]');
+    const amenityCheckboxes = document.querySelectorAll('.amenity-item input[type="checkbox"]');
+    amenityCheckboxes.forEach(function(cb){
+        cb.addEventListener('change', function(){
+            this.closest('.amenity-item').classList.toggle('checked', this.checked);
+        });
+    });
     const streetInput = document.querySelector('input[name="street"]');
     const houseNumInput = document.querySelector('input[name="house_num"]');
     const mapLinkInput = document.getElementById('map_link');
     const autoGenNote = document.getElementById('auto-gen-note');
+    const mapAutoToggle = document.getElementById('map_auto');
 
     function updateMapLink() {
+        if(!mapAutoToggle.checked) return;
         const kebele = kebeleInput.value.trim();
         const street = streetInput.value.trim();
         const houseNum = houseNumInput.value.trim();
@@ -258,6 +296,13 @@ if(!isset($_SESSION['user_id'])){
     kebeleInput.addEventListener('input', updateMapLink);
     streetInput.addEventListener('input', updateMapLink);
     houseNumInput.addEventListener('input', updateMapLink);
+    mapAutoToggle.addEventListener('change', function(){
+        if(this.checked){
+            updateMapLink();
+        } else {
+            autoGenNote.style.display = 'none';
+        }
+    });
 
     function updatePhotoList(input){
         var el = document.getElementById('img-name');
@@ -352,6 +397,14 @@ if(!isset($_SESSION['user_id'])){
 
                 if(mysqli_query($conn, $sql)){
                     $house_id = mysqli_insert_id($conn);
+                    if(isset($_POST['amenities']) && is_array($_POST['amenities'])){
+                        foreach($_POST['amenities'] as $amenity_id){
+                            $amenity_id = (int)$amenity_id;
+                            if($amenity_id > 0){
+                                mysqli_query($conn, "INSERT IGNORE INTO house_amenities (house_id, amenity_id) VALUES ($house_id, $amenity_id)");
+                            }
+                        }
+                    }
                     $req_sql = "INSERT INTO requests (user_id, house_id, status, created_at) VALUES ($user_id, $house_id, 0, NOW())";
                     mysqli_query($conn, $req_sql);
                     $order = 1;

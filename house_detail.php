@@ -38,6 +38,17 @@ if($house){
 
 $status    = $house['status'] ?? '';
 $isAvail   = ($status === 'Available');
+$amenities = [];
+if($house){
+    $aq = mysqli_query($conn, "SELECT a.id, a.name, a.icon FROM house_amenities ha
+                               JOIN amenities a ON ha.amenity_id = a.id
+                               WHERE ha.house_id = $id ORDER BY a.sort_order ASC");
+    if($aq){
+        while($a = mysqli_fetch_assoc($aq)){
+            $amenities[] = $a;
+        }
+    }
+}
 $rentHref  = isset($_SESSION['user_id'])
     ? 'rent_request.php?house=' . $id
     : 'login.php?redirect=' . urlencode('rent_request.php?house=' . $id);
@@ -76,7 +87,7 @@ $rentHref  = isset($_SESSION['user_id'])
         .notfound a{display:inline-flex;align-items:center;gap:8px;padding:13px 26px;background:linear-gradient(135deg,#0d9488,#14b8a6);color:#fff;border-radius:11px;text-decoration:none;font-weight:700;font-size:14px;transition:all .3s}
         .notfound a:hover{box-shadow:0 6px 20px rgba(13,148,136,.4);transform:translateY(-1px)}
 
-        .layout{display:grid;grid-template-columns:1fr 380px;gap:24px;align-items:start}
+        .layout{display:grid;grid-template-columns:620px 1fr;gap:24px;align-items:start}
 
         /* GALLERY */
         .gallery{background:#fff;border-radius:18px;overflow:hidden;border:1px solid #f1f5f9;box-shadow:0 2px 14px rgba(0,0,0,.04)}
@@ -111,6 +122,11 @@ $rentHref  = isset($_SESSION['user_id'])
         .fact .k{font-size:11px;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.4px}
         .fact .v{font-size:14px;color:#0f172a;font-weight:700;margin-top:3px;word-break:break-word}
 
+        .detail-amenities{display:flex;flex-wrap:wrap;gap:8px}
+        .detail-amenity{display:inline-flex;align-items:center;gap:7px;background:#f0fdfa;border:1px solid #ccfbf1;color:#0f766e;padding:7px 13px;border-radius:9px;font-size:12px;font-weight:600}
+        .detail-amenity i{color:#0d9488;font-size:12px}
+        .amenity-card{background:#fff;border-radius:18px;border:1px solid #f1f5f9;padding:24px;box-shadow:0 2px 14px rgba(0,0,0,.04)}
+
         .actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
         .btn-action{display:inline-flex;align-items:center;justify-content:center;gap:9px;padding:14px;border-radius:11px;font-size:14px;font-weight:700;text-decoration:none;transition:all .25s;border:none;cursor:pointer;font-family:inherit}
         .btn-rent{background:linear-gradient(135deg,#0d9488,#14b8a6);color:#fff;grid-column:1/-1}
@@ -137,7 +153,7 @@ $rentHref  = isset($_SESSION['user_id'])
         .summary li span{color:#94a3b8}
         .summary li strong{color:#334155;font-weight:600;text-align:right}
 
-        @media(max-width:860px){
+        @media(max-width:1080px){
             .layout{grid-template-columns:1fr}
             .g-main{height:300px}
         }
@@ -237,6 +253,20 @@ $rentHref  = isset($_SESSION['user_id'])
                     </div>
                 </div>
             </div>
+
+            <?php if(!empty($amenities)): ?>
+            <div class="gallery">
+                <div class="amenity-card">
+                    <div class="info-title">Amenities</div>
+                    <div class="detail-amenities">
+                        <?php foreach($amenities as $a): ?>
+                            <span class="detail-amenity"><i class="<?php echo htmlspecialchars($a['icon']); ?>"></i> <?php echo htmlspecialchars($a['name']); ?></span>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
+
         </div>
     </div>
 
