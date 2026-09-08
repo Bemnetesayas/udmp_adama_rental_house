@@ -16,6 +16,20 @@ $stats = mysqli_fetch_assoc(mysqli_query($conn, "SELECT
     SUM(CASE WHEN status='Rented' THEN 1 ELSE 0 END) as rented,
     SUM(CASE WHEN status='Pending' THEN 1 ELSE 0 END) as pending
     FROM houses WHERE user_id = $current_user"));
+
+$rental_reqs = [];
+$rq = mysqli_query($conn, "
+    SELECT rr.id, rr.status AS req_status, rr.created_at, rr.message,
+           h.kebele, h.street, h.amount, h.category, u.full_name, u.email
+    FROM rental_requests rr
+    JOIN houses h ON rr.house_id = h.id
+    LEFT JOIN users u ON rr.user_id = u.id
+    WHERE h.user_id = $current_user
+    ORDER BY CASE rr.status WHEN 'pending' THEN 0 ELSE 1 END, rr.created_at DESC
+    LIMIT 50");
+if($rq) $rental_reqs = mysqli_fetch_all($rq, MYSQLI_ASSOC);
+$pending_req_count = 0;
+foreach($rental_reqs as $r){ if($r['req_status'] === 'pending') $pending_req_count++; }
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -93,10 +107,44 @@ $stats = mysqli_fetch_assoc(mysqli_query($conn, "SELECT
         .card-actions a,.card-actions button{padding:10px;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none;border:none;cursor:pointer;transition:all .2s;text-align:center;font-family:inherit}
         .btn-toggle{background:#f1f5f9;color:#475569}
         .btn-toggle:hover{background:#e2e8f0}
+        .btn-disabled{background:#f8fafc;color:#94a3b8;cursor:not-allowed;opacity:.7}
         .btn-edit{background:rgba(245,158,11,.1);color:#d97706}
         .btn-edit:hover{background:#f59e0b;color:#fff}
         .btn-delete{background:rgba(239,68,68,.08);color:#dc2626;border:1px solid rgba(239,68,68,.2)}
         .btn-delete:hover{background:#ef4444;color:#fff}
+
+        /* RENTAL REQUESTS */
+        .req-list{display:flex;flex-direction:column;gap:12px;margin-bottom:32px}
+        .req-item{background:#fff;border:1px solid #f1f5f9;border-radius:12px;padding:16px;display:flex;align-items:center;gap:16px;transition:all .3s}
+        .req-item:hover{border-color:#e2e8f0;box-shadow:0 4px 12px rgba(0,0,0,.04)}
+        .req-avatar{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#0d9488,#14b8a6);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex-shrink:0}
+        .req-info{flex:1;min-width:0}
+        .req-info .req-tenant{font-size:14px;font-weight:700;color:#0f172a;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+        .req-info .req-prop{font-size:13px;color:#64748b;margin-top:3px}
+        .req-info .req-prop i{color:#0d9488;font-size:11px;margin-right:3px}
+        .req-info .req-time{font-size:11px;color:#94a3b8;margin-top:4px}
+        .req-status{padding:4px 12px;border-radius:50px;font-size:11px;font-weight:700;text-transform:uppercase}
+        .req-status.pending{background:rgba(245,158,11,.12);color:#d97706}
+        .req-status.accepted{background:rgba(16,185,129,.12);color:#059669}
+        .req-status.rejected{background:rgba(239,68,68,.12);color:#dc2626}
+        .req-status.completed{background:rgba(100,116,139,.12);color:#64748b}
+        .req-actions{display:flex;gap:8px;flex-shrink:0}
+        .req-actions a{padding:9px 16px;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;transition:all .2s;border:none;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-family:inherit}
+        .btn-accept{background:linear-gradient(135deg,#10b981,#059669);color:#fff}
+        .btn-accept:hover{box-shadow:0 4px 15px rgba(16,185,129,.4);transform:translateY(-1px)}
+        .btn-reject{background:rgba(239,68,68,.08);color:#dc2626;border:1px solid rgba(239,68,68,.2)}
+        .btn-reject:hover{background:#ef4444;color:#fff}
+        .req-empty{background:#fff;border:1px dashed #e2e8f0;border-radius:12px;padding:32px;text-align:center;color:#94a3b8;font-size:14px;margin-bottom:32px}
+        .req-empty i{font-size:24px;display:block;color:#cbd5e1;margin-bottom:8px}
+        @media(max-width:600px){
+            .req-item{flex-direction:column;align-items:flex-start}
+            .req-actions{width:100%}
+            .req-actions a{flex:1;justify-content:center}
+        }
+
+        .flash{margin-bottom:20px;padding:13px 18px;border-radius:10px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:10px}
+        .flash-ok{background:rgba(16,185,129,.1);color:#059669;border:1px solid rgba(16,185,129,.3)}
+        .flash-err{background:rgba(239,68,68,.1);color:#dc2626;border:1px solid rgba(239,68,68,.3)}
 
         .empty-state{text-align:center;padding:80px 20px;background:#fff;border-radius:14px;border:1px solid #f1f5f9;grid-column:1/-1}
         .empty-state i{font-size:48px;color:#d1d5db;margin-bottom:16px}
@@ -164,6 +212,46 @@ $stats = mysqli_fetch_assoc(mysqli_query($conn, "SELECT
         </div>
 
         <div class="section-title">
+            <h2>Rental Requests<?php if($pending_req_count > 0): ?><span class="card-category" style="background:rgba(245,158,11,.15);color:#d97706;margin-left:8px"><?php echo $pending_req_count; ?> pending</span><?php endif; ?></h2>
+        </div>
+
+        <?php if(isset($_GET['msg'])):
+            if($_GET['msg'] == 'status_saved'): ?>
+                <div class="flash flash-ok"><i class="fas fa-check-circle"></i> Listing status updated.</div>
+            <?php elseif($_GET['msg'] == 'accepted'): ?>
+                <div class="flash flash-ok"><i class="fas fa-check-circle"></i> Rental request accepted. The tenant has been notified and the property is marked as rented.</div>
+            <?php elseif($_GET['msg'] == 'rejected'): ?>
+                <div class="flash flash-err"><i class="fas fa-circle-xmark"></i> Rental request declined. The tenant has been notified.</div>
+            <?php endif;
+        endif; ?>
+
+        <?php if(empty($rental_reqs)): ?>
+            <div class="req-empty"><i class="fas fa-hand-holding-heart"></i>No rental requests yet. When someone wants to rent your property, their request will appear here.</div>
+        <?php else: ?>
+            <div class="req-list">
+                <?php foreach($rental_reqs as $r): ?>
+                    <div class="req-item">
+                        <div class="req-avatar"><?php echo strtoupper(substr($r['full_name'] ?? 'T', 0, 1)); ?></div>
+                        <div class="req-info">
+                            <div class="req-tenant">
+                                <?php echo htmlspecialchars($r['full_name'] ?? 'Tenant'); ?>
+                                <span class="req-status <?php echo htmlspecialchars($r['req_status']); ?>"><?php echo htmlspecialchars($r['req_status']); ?></span>
+                            </div>
+                            <div class="req-prop"><i class="fas fa-location-dot"></i><?php echo htmlspecialchars($r['category']); ?> in Kebele <?php echo htmlspecialchars($r['kebele']); ?>, <?php echo htmlspecialchars($r['street']); ?> &middot; <?php echo number_format($r['amount']); ?> ETB</div>
+                            <div class="req-time"><?php echo date('M j, g:i a', strtotime($r['created_at'])); ?></div>
+                        </div>
+                        <?php if($r['req_status'] === 'pending'): ?>
+                            <div class="req-actions">
+                                <a href="javascript:void(0)" onclick="confirmAccept(<?php echo $r['id']; ?>)" class="btn-accept"><i class="fas fa-check"></i> Accept</a>
+                                <a href="javascript:void(0)" onclick="confirmReject(<?php echo $r['id']; ?>)" class="btn-reject"><i class="fas fa-xmark"></i> Decline</a>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+
+        <div class="section-title">
             <h2>Your Listings</h2>
         </div>
 
@@ -194,15 +282,22 @@ $stats = mysqli_fetch_assoc(mysqli_query($conn, "SELECT
                             Kebele <?php echo htmlspecialchars($row['kebele']); ?>, <?php echo htmlspecialchars($row['street']); ?>
                         </div>
                         <div class="card-actions">
-                            <a href="toggle_status.php?id=<?php echo $row['id']; ?>" class="btn-toggle">
-                                <i class="fas fa-sync-alt"></i> <?php echo ($status=='Available') ? 'Mark Rented' : 'Mark Available'; ?>
-                            </a>
+                            <?php if($status === 'Available' || strcasecmp($status,'Rented')===0): ?>
+                                <a href="toggle_status.php?id=<?php echo (int)$row['id']; ?>" class="btn-toggle">
+                                    <i class="fas fa-sync-alt"></i> <?php echo ($status=='Available') ? 'Mark Rented' : 'Mark Available'; ?>
+                                </a>
+                            <?php elseif(strcasecmp($status,'Pending')===0): ?>
+                                <span class="btn-toggle btn-disabled"><i class="fas fa-clock"></i> Awaiting Approval</span>
+                            <?php else: ?>
+                                <span class="btn-toggle btn-disabled"><i class="fas fa-ban"></i> Not Available</span>
+                            <?php endif; ?>
                             <a href="edit_house.php?id=<?php echo $row['id']; ?>" class="btn-edit">
                                 <i class="fas fa-edit"></i> Edit
                             </a>
-                            <form action="delete.php" method="POST" onsubmit="return confirm('Permanently delete this listing?')" style="display:contents">
+                            <form action="delete.php" method="POST" id="del-myhouse-<?php echo $row['id']; ?>" style="display:contents">
                                 <input type="hidden" name="id" value="<?php echo $row['id']; ?>">
-                                <button type="submit" name="delete_btn" class="btn-delete"><i class="fas fa-trash"></i> Delete</button>
+                                <input type="hidden" name="delete_btn" value="1">
+                                <button type="button" class="btn-delete" onclick="confirmMyListingDelete(<?php echo $row['id']; ?>)"><i class="fas fa-trash"></i> Delete</button>
                             </form>
                         </div>
                     </div>
@@ -215,6 +310,34 @@ $stats = mysqli_fetch_assoc(mysqli_query($conn, "SELECT
             ?>
         </div>
     </div>
+
+    <?php include(__DIR__ . '/popup.php'); ?>
+    <script>
+    function confirmAccept(id){
+        adamaConfirm({
+            title: "Accept rental request",
+            message: "Accept this rental request? The property will be marked as rented.",
+            confirmText: "Accept",
+            onConfirm: function(){ window.location = "rental_request_action.php?action=accept&id=" + id; }
+        });
+    }
+    function confirmReject(id){
+        adamaConfirm({
+            title: "Decline rental request",
+            message: "Decline this rental request?",
+            confirmText: "Decline",
+            onConfirm: function(){ window.location = "rental_request_action.php?action=reject&id=" + id; }
+        });
+    }
+    function confirmMyListingDelete(id){
+        adamaConfirm({
+            title: "Delete listing",
+            message: "Delete this listing permanently? This cannot be undone.",
+            confirmText: "Delete",
+            onConfirm: function(){ document.getElementById('del-myhouse-' + id).submit(); }
+        });
+    }
+    </script>
 
     <?php include('footer.php'); ?>
 </body>

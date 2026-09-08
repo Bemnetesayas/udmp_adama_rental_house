@@ -30,9 +30,11 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
         }
 
         // Delete their house image files
-        $houses = mysqli_query($conn, "SELECT image, video_file FROM houses WHERE user_id=$target_id");
+        $houses = mysqli_query($conn, "SELECT id, image, video_file FROM houses WHERE user_id=$target_id");
+        $hids = [];
         if($houses){
             while($h = mysqli_fetch_assoc($houses)){
+                $hids[] = (int)$h['id'];
                 if(!empty($h['image']) && file_exists("uploads/" . $h['image'])){
                     @unlink("uploads/" . $h['image']);
                 }
@@ -42,8 +44,24 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
             }
         }
 
+        if(!empty($hids)){
+            $in = implode(',', $hids);
+            $imgs = mysqli_query($conn, "SELECT filename FROM house_images WHERE house_id IN ($in)");
+            if($imgs){
+                while($im = mysqli_fetch_assoc($imgs)){
+                    if(!empty($im['filename']) && file_exists("uploads/" . $im['filename'])){
+                        @unlink("uploads/" . $im['filename']);
+                    }
+                }
+            }
+            mysqli_query($conn, "DELETE FROM house_images WHERE house_id IN ($in)");
+        }
+
         // Delete their houses and requests (cleanup)
         mysqli_query($conn, "DELETE FROM requests WHERE user_id=$target_id");
+        mysqli_query($conn, "DELETE FROM requests WHERE house_id IN (SELECT id FROM houses WHERE user_id=$target_id)");
+        mysqli_query($conn, "DELETE FROM rental_requests WHERE house_id IN (SELECT id FROM houses WHERE user_id=$target_id)");
+        mysqli_query($conn, "DELETE FROM rental_requests WHERE user_id=$target_id");
         mysqli_query($conn, "DELETE FROM houses WHERE user_id=$target_id");
         mysqli_query($conn, "DELETE FROM admin_invites WHERE user_id=$target_id");
         mysqli_query($conn, "DELETE FROM users WHERE id=$target_id");

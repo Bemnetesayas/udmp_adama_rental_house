@@ -34,10 +34,36 @@ if(isset($_POST['update'])){
                    WHERE id=$house_id AND user_id=$user_id";
     
     if(mysqli_query($conn, $update_sql)){
-        echo "<script>alert('Listing updated successfully!'); window.location='manage_houses.php';</script>";
-        exit();
+        $updated = true;
+    } else {
+        $update_error = true;
     }
 }
+
+if(!empty($updated)):
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AdamaRent</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+</head>
+<body style="margin:0;background:#f8fafc;font-family:'Inter',sans-serif">
+    <?php include(__DIR__ . '/popup.php'); ?>
+    <script>
+        window.addEventListener('DOMContentLoaded', function(){
+            showToast("Listing updated successfully!", "success", "Changes saved");
+            setTimeout(function(){ window.location = "manage_houses.php"; }, 1800);
+        });
+    </script>
+</body>
+</html>
+<?php
+exit();
+endif;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -154,5 +180,10 @@ if(isset($_POST['update'])){
             </form>
         </div>
     </div>
+
+    <?php include(__DIR__ . '/popup.php'); ?>
+    <?php if(isset($update_error)): ?>
+        <script>window.addEventListener('DOMContentLoaded', function(){ showToast("Database error. Your changes were not saved.", "error", "Update failed"); });</script>
+    <?php endif; ?>
 </body>
 </html>

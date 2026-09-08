@@ -6,6 +6,25 @@ include('db.php');
 header("Cache-Control: no-cache, no-store, must-revalidate"); 
 header("Pragma: no-cache"); 
 header("Expires: 0"); 
+
+function timeAgo($datetime){
+    $diff = time() - strtotime($datetime);
+    if($diff < 60) return 'Just now';
+    if($diff < 3600) return floor($diff/60) . ' min ago';
+    if($diff < 86400) return floor($diff/3600) . ' hr ago';
+    if($diff < 604800) return floor($diff/86400) . ' d ago';
+    return date('M j', strtotime($datetime));
+}
+
+$notifs = [];
+$unread_count = 0;
+if(isset($_SESSION['user_id'])){
+    $uid = (int)$_SESSION['user_id'];
+    $nq = mysqli_query($conn, "SELECT * FROM notifications WHERE user_id=$uid ORDER BY created_at DESC, id DESC LIMIT 10");
+    if($nq) $notifs = mysqli_fetch_all($nq, MYSQLI_ASSOC);
+    $cq = mysqli_query($conn, "SELECT COUNT(*) c FROM notifications WHERE user_id=$uid AND is_read=0");
+    if($cq) $unread_count = (int)mysqli_fetch_assoc($cq)['c'];
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -25,6 +44,10 @@ header("Expires: 0");
         .nav-brand-icon{width:36px;height:36px;background:linear-gradient(135deg,#0d9488,#14b8a6);border-radius:9px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:14px}
         .nav-brand-text{color:#fff;font-size:18px;font-weight:800}
         .nav-brand-text span{color:#2dd4bf}
+        .nav-center{display:flex;align-items:center}
+        .nav-home-btn{display:inline-flex;align-items:center;gap:8px;color:rgba(255,255,255,.75);text-decoration:none;font-size:14px;font-weight:600;padding:9px 18px;border-radius:9px;transition:all .2s;border:1px solid transparent}
+        .nav-home-btn:hover{color:#fff;background:rgba(255,255,255,.08)}
+        .nav-home-btn.active{color:#fff;background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.12)}
         .nav-right{display:flex;align-items:center;gap:6px}
         .nav-right a{color:rgba(255,255,255,.8);text-decoration:none;font-size:13px;font-weight:500;padding:8px 14px;border-radius:8px;transition:all .2s}
         .nav-right a:hover{color:#fff;background:rgba(255,255,255,.1)}
@@ -44,6 +67,34 @@ header("Expires: 0");
         .user-dropdown a:hover{background:rgba(255,255,255,.05);color:#fff}
         .user-dropdown a.logout{color:#f87171;border-top:1px solid rgba(255,255,255,.08)}
         .user-dropdown a.logout:hover{background:rgba(248,113,113,.1);color:#fca5a5}
+
+        /* NOTIFICATION BELL */
+        .bell-wrap{position:relative}
+        .bell-btn{position:relative;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:#fff;cursor:pointer;transition:all .2s}
+        .bell-btn:hover{background:rgba(255,255,255,.14)}
+        .bell-btn i{font-size:15px}
+        .bell-badge{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;background:#ef4444;color:#fff;border-radius:50%;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px;border:2px solid #0f172a}
+        .notif-dropdown{position:absolute;top:calc(100% + 10px);right:0;width:340px;max-width:calc(100vw - 32px);background:#1e293b;border-radius:12px;border:1px solid rgba(255,255,255,.1);box-shadow:0 20px 40px rgba(0,0,0,.3);opacity:0;visibility:hidden;transform:translateY(-8px);transition:all .2s;z-index:1002}
+        .bell-wrap.open .notif-dropdown{opacity:1;visibility:visible;transform:translateY(0)}
+        .notif-header{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:space-between}
+        .notif-header h4{color:#f1f5f9;font-size:14px;font-weight:700}
+        .notif-header .notif-unread-count{color:#94a3b8;font-size:12px}
+        .notif-list{max-height:340px;overflow-y:auto}
+        .notif-item{display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.05);text-decoration:none;transition:background .15s}
+        .notif-item:hover{background:rgba(255,255,255,.05)}
+        .notif-item.unread{background:rgba(13,148,136,.08)}
+        .notif-icon{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#0d9488,#14b8a6);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+        .notif-icon.type-listing{background:linear-gradient(135deg,#3b82f6,#60a5fa)}
+        .notif-icon.type-rejection{background:linear-gradient(135deg,#ef4444,#f87171)}
+        .notif-text{flex:1;min-width:0}
+        .notif-text strong{color:#f1f5f9;font-size:13px;display:block;margin-bottom:2px}
+        .notif-text p{color:#94a3b8;font-size:12px;line-height:1.5}
+        .notif-text time{color:#64748b;font-size:10px;display:block;margin-top:4px}
+        .notif-empty{padding:32px 16px;text-align:center;color:#94a3b8;font-size:13px}
+        .notif-empty i{font-size:26px;color:#475569;display:block;margin-bottom:8px}
+        .notif-footer{padding:10px 16px;border-top:1px solid rgba(255,255,255,.08)}
+        .notif-footer button{width:100%;background:rgba(13,148,136,.12);border:1px solid rgba(13,148,136,.3);color:#2dd4bf;padding:9px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;font-family:inherit}
+        .notif-footer button:hover{background:rgba(13,148,136,.25)}
 
         /* SEARCH */
         .search-section{background:#fff;border-bottom:1px solid #f1f5f9;padding:24px 32px}
@@ -65,7 +116,7 @@ header("Expires: 0");
         @media(max-width:1200px){.card-grid{grid-template-columns:repeat(3,1fr)}}
         @media(max-width:900px){.card-grid{grid-template-columns:repeat(2,1fr)}}
         @media(max-width:600px){.card-grid{grid-template-columns:1fr}}
-        .card{background:#fff;border-radius:14px;overflow:hidden;border:1px solid #f1f5f9;transition:all .3s;position:relative}
+        .card{background:#fff;border-radius:14px;overflow:hidden;border:1px solid #f1f5f9;transition:all .3s;position:relative;cursor:pointer}
         .card:hover{transform:translateY(-4px);box-shadow:0 12px 30px rgba(0,0,0,.08);border-color:#e2e8f0}
         .card-img{position:relative;height:210px;overflow:hidden}
         .card-img img{width:100%;height:100%;object-fit:cover;background:#f1f5f9}
@@ -87,10 +138,9 @@ header("Expires: 0");
         .btn-phone:hover{background:#0d9488;color:#fff}
         .btn-map{background:rgba(59,130,246,.1);color:#3b82f6}
         .btn-map:hover{background:#3b82f6;color:#fff}
+        .btn-rent{background:linear-gradient(135deg,#0d9488,#14b8a6);color:#fff}
+        .btn-rent:hover{box-shadow:0 4px 15px rgba(13,148,136,.4);transform:translateY(-1px)}
         .phone-hidden{background:#f8f9fa;color:#9ca3af;padding:7px 12px;border-radius:8px;font-size:12px;font-weight:500}
-        .video-overlay{position:absolute;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;transition:opacity .3s}
-        .card-img:hover .video-overlay{opacity:1}
-        .video-play{width:48px;height:48px;background:rgba(255,255,255,.95);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#0f172a;font-size:16px}
 
         .empty-state{text-align:center;padding:80px 20px;grid-column:1/-1}
         .empty-state i{font-size:48px;color:#d1d5db;margin-bottom:16px}
@@ -115,6 +165,41 @@ header("Expires: 0");
         <div class="nav-right">
             <?php if(isset($_SESSION['user_id'])): ?>
                 <a href="post_house.php" class="btn-accent"><i class="fas fa-plus"></i> New Posts</a>
+                <div class="bell-wrap">
+                    <button class="bell-btn" onclick="toggleNotif(this)" aria-label="Notifications">
+                        <i class="fas fa-bell"></i>
+                        <?php if($unread_count > 0): ?><span class="bell-badge" id="bellBadge"><?php echo min($unread_count, 99); ?></span><?php endif; ?>
+                    </button>
+                    <div class="notif-dropdown">
+                        <div class="notif-header">
+                            <h4>Notifications</h4>
+                            <span class="notif-unread-count" id="notifCount"><?php echo $unread_count; ?> unread</span>
+                        </div>
+                        <div class="notif-list">
+                            <?php if(empty($notifs)): ?>
+                                <div class="notif-empty"><i class="fas fa-bell-slash"></i>No notifications yet</div>
+                            <?php else: foreach($notifs as $n):
+                                $nType = $n['type'] === 'listing' ? 'listing' : ($n['type'] === 'rejection' ? 'rejection' : '');
+                                $nIcon = $n['type'] === 'rent_request' ? 'fa-hand-holding-heart' : ($n['type'] === 'rejection' ? 'fa-circle-xmark' : 'fa-circle-check');
+                                $nLink = $n['link'] ? htmlspecialchars($n['link']) : '#';
+                            ?>
+                                <a href="<?php echo $nLink; ?>" class="notif-item<?php echo $n['is_read'] ? '' : ' unread'; ?>">
+                                    <span class="notif-icon<?php echo $nType ? ' type-' . $nType : ''; ?>"><i class="fas <?php echo $nIcon; ?>"></i></span>
+                                    <span class="notif-text">
+                                        <strong><?php echo htmlspecialchars($n['title']); ?></strong>
+                                        <p><?php echo htmlspecialchars($n['message']); ?></p>
+                                        <time><?php echo timeAgo($n['created_at']); ?></time>
+                                    </span>
+                                </a>
+                            <?php endforeach; endif; ?>
+                        </div>
+                        <?php if(!empty($notifs)): ?>
+                        <div class="notif-footer">
+                            <button onclick="markAllRead()"><i class="fas fa-check-double"></i> Mark all as read</button>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
                 <div class="user-avatar-wrap">
                     <div class="user-avatar"><?php echo strtoupper(substr($_SESSION['user_name'] ?? 'U', 0, 1)); ?></div>
                     <div class="user-dropdown">
@@ -206,16 +291,11 @@ header("Expires: 0");
                     $status = $row['status'] ?? 'Available';
                     $badgeClass = ($status == 'Rented') ? 'badge-rented' : 'badge-available'; 
             ?> 
-                <div class="card">
+                <div class="card" data-href="house_detail.php?house=<?php echo (int)$row['id']; ?>">
                     <div class="card-img">
                         <img src="uploads/<?php echo htmlspecialchars($row['image']); ?>" alt="Property" loading="lazy">
                         <span class="card-badge <?php echo $badgeClass; ?>"><?php echo htmlspecialchars($status); ?></span>
                         <span class="card-category"><?php echo htmlspecialchars($row['category']); ?></span>
-                        <?php if(!empty($row['video_file']) && $status == 'Available'): ?>
-                            <div class="video-overlay" onclick="startVideo(this, 'uploads/<?php echo htmlspecialchars($row['video_file']); ?>')">
-                                <div class="video-play"><i class="fas fa-play"></i></div>
-                            </div>
-                        <?php endif; ?>
                     </div>
                     <div class="card-body">
                         <div class="card-price"><?php echo number_format($row['amount']); ?> <span>ETB/month</span></div>
@@ -228,6 +308,7 @@ header("Expires: 0");
                             <div class="card-owner"><i class="fas fa-user"></i> <?php echo htmlspecialchars($row['full_name'] ?? 'Private'); ?></div>
                             <div class="card-actions">
                                 <?php if($status == 'Available'): ?>
+                                    <a href="<?php echo isset($_SESSION['user_id']) ? 'rent_request.php?house=' . $row['id'] : 'login.php?redirect=' . urlencode('rent_request.php?house=' . $row['id']); ?>" class="btn-rent"><i class="fas fa-hand-holding-heart"></i> Rent</a>
                                     <a href="tel:<?php echo htmlspecialchars($row['phone']); ?>" class="btn-phone"><i class="fas fa-phone"></i> Call</a>
                                 <?php else: ?>
                                     <span class="phone-hidden"><i class="fas fa-lock"></i> Rented</span>
@@ -249,8 +330,32 @@ header("Expires: 0");
     </div>
 
     <script>
-    function startVideo(container, videoSrc) {
-        container.innerHTML = '<video width="100%" height="210" controls autoplay style="object-fit:cover;border-radius:14px 14px 0 0"><source src="'+videoSrc+'" type="video/mp4"></video>';
+    document.querySelectorAll('.card').forEach(function(card){
+        card.addEventListener('click', function(e){
+            if(e.target.closest('a')) return;
+            var href = card.getAttribute('data-href');
+            if(href) window.location = href;
+        });
+    });
+
+    function toggleNotif(btn){
+        var wrap = btn.closest('.bell-wrap');
+        var isOpen = wrap.classList.contains('open');
+        document.querySelectorAll('.bell-wrap.open').forEach(function(w){ w.classList.remove('open'); });
+        if(!isOpen) wrap.classList.add('open');
+    }
+    document.addEventListener('click', function(e){
+        if(!e.target.closest('.bell-wrap')) document.querySelectorAll('.bell-wrap.open').forEach(function(w){ w.classList.remove('open'); });
+    });
+
+    function markAllRead(){
+        fetch('mark_notifications_read.php', {method: 'POST'}).then(function(){
+            var badge = document.getElementById('bellBadge');
+            if(badge) badge.remove();
+            var count = document.getElementById('notifCount');
+            if(count) count.textContent = '0 unread';
+            document.querySelectorAll('.notif-item.unread').forEach(function(i){ i.classList.remove('unread'); });
+        });
     }
     </script>
 

@@ -49,6 +49,15 @@ if (!$conn) {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )");
 
+    mysqli_query($conn, "CREATE TABLE IF NOT EXISTS house_images (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        house_id INT NOT NULL,
+        filename VARCHAR(255) NOT NULL,
+        sort_order INT DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_house (house_id)
+    )");
+
     mysqli_query($conn, "CREATE TABLE IF NOT EXISTS app_config (
         config_key VARCHAR(100) PRIMARY KEY,
         config_value TEXT
@@ -62,6 +71,27 @@ if (!$conn) {
         status VARCHAR(20) DEFAULT 'pending',
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         created_by INT
+    )");
+
+    mysqli_query($conn, "CREATE TABLE IF NOT EXISTS rental_requests (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        house_id INT NOT NULL,
+        status VARCHAR(20) DEFAULT 'pending',
+        message TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )");
+
+    mysqli_query($conn, "CREATE TABLE IF NOT EXISTS notifications (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        type VARCHAR(20) NOT NULL DEFAULT 'info',
+        title VARCHAR(120) NOT NULL,
+        message TEXT,
+        link VARCHAR(255),
+        is_read TINYINT(1) NOT NULL DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_user_read (user_id, is_read)
     )");
 
     $admin_count = mysqli_fetch_row(mysqli_query($conn, "SELECT COUNT(*) FROM users WHERE is_admin >= 1"))[0];
