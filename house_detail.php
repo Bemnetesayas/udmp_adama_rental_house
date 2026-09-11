@@ -38,6 +38,11 @@ if($house){
 
 $status    = $house['status'] ?? '';
 $isAvail   = ($status === 'Available');
+$pendingReqId = 0;
+if(isset($_SESSION['user_id']) && $id > 0){
+    $rc = mysqli_query($conn, "SELECT id FROM rental_requests WHERE user_id=" . (int)$_SESSION['user_id'] . " AND house_id=$id AND status='pending' LIMIT 1");
+    if($rc && ($rrow = mysqli_fetch_assoc($rc))) $pendingReqId = (int)$rrow['id'];
+}
 $amenities = [];
 if($house){
     $aq = mysqli_query($conn, "SELECT a.id, a.name, a.icon FROM house_amenities ha
@@ -136,6 +141,7 @@ $rentHref  = isset($_SESSION['user_id'])
         .btn-map{background:rgba(59,130,246,.1);color:#3b82f6}
         .btn-map:hover{background:#3b82f6;color:#fff}
         .rented-note{grid-column:1/-1;background:#f8faf9;border:1px dashed #e2e8f0;color:#94a3b8;border-radius:11px;padding:14px;text-align:center;font-size:13px;font-weight:600}
+        .btn-rent:disabled{opacity:.65;cursor:default;transform:none;box-shadow:none}
 
         /* OWNER CARD */
         .owner{display:flex;align-items:center;gap:12px;background:#f8fafc;border:1px solid #f1f5f9;border-radius:12px;padding:14px}
@@ -235,7 +241,7 @@ $rentHref  = isset($_SESSION['user_id'])
 
                 <div class="actions">
                     <?php if($isAvail): ?>
-                        <a href="<?php echo htmlspecialchars($rentHref); ?>" class="btn-action btn-rent"><i class="fas fa-hand-holding-heart"></i> Request to Rent</a>
+                        <a href="<?php echo htmlspecialchars($rentHref); ?>" id="rentBtn" class="btn-action btn-rent"><i class="fas <?php echo $pendingReqId ? 'fa-xmark' : 'fa-hand-holding-heart'; ?>"></i> <?php echo $pendingReqId ? 'Cancel Request' : 'Request to Rent'; ?></a>
                         <a href="tel:<?php echo htmlspecialchars($house['phone']); ?>" class="btn-action btn-call"><i class="fas fa-phone"></i> Call Owner</a>
                     <?php else: ?>
                         <div class="rented-note"><i class="fas fa-lock"></i> This property is currently rented and cannot be reserved.</div>
@@ -292,6 +298,79 @@ $rentHref  = isset($_SESSION['user_id'])
             renderPhoto();
         }
         <?php endif; ?>
+
+        <?php if(!$notFound && $isAvail): ?>
+        var rentBtn = document.getElementById('rentBtn');
+        if(rentBtn){
+            rentBtn.addEventListener('click', function(e){
+                e.preventDefault();
+                var link = this;
+                <?php if(!isset($_SESSION['user_id'])): ?>
+                adamaConfirm({
+                    title: 'Sign in required',
+                    message: 'You need to sign in before requesting this property.',
+                    confirmText: 'Go to Login',
+                    onConfirm: function(){ window.location = link.href; }
+                });
+                <?php else: ?>
+                var reqId = <?php echo (int)$pendingReqId; ?>;
+                var havingRequest = reqId > 0;
+                if(havingRequest){
+                    adamaConfirm({
+                        title: 'Cancel rental request',
+                        message: 'Do you want to withdraw your request to rent this property?',
+                        confirmText: 'Cancel Request',
+                        onConfirm: function(){
+                            var btn = link;
+                            btn.disabled = true;
+                            fetch('rental_request_action.php?action=cancel&id=' + reqId, {headers: {'X-Requested-With': 'XMLHttpRequest'}})
+                                .then(function(r){ return r.json(); })
+                                .then(function(data){
+                                    showToast(data.message, data.type, data.title);
+                                    btn.disabled = false;
+                                    if(data.type === 'success'){
+                                        havingRequest = false;
+                                        btn.innerHTML = '<i class="fas fa-hand-holding-heart"></i> Request to Rent';
+                                    }
+                                })
+                                .catch(function(){
+                                    btn.disabled = false;
+                                    showToast('Could not reach the server. Please try again.', 'error', 'Error');
+                                });
+                        }
+                    });
+                } else {
+                    adamaConfirm({
+                        title: 'Request to Rent',
+                        message: 'Send a rental request to the owner of this property? The owner will be notified immediately.',
+                        confirmText: 'Send Request',
+                        onConfirm: function(){
+                            var btn = link;
+                            btn.disabled = true;
+                            fetch('rent_request.php?house=<?php echo $id; ?>', {headers: {'X-Requested-With': 'XMLHttpRequest'}})
+                                .then(function(r){ return r.json(); })
+                                .then(function(data){
+                                    if(data.type === 'login_needed'){ window.location = data.redirect; return; }
+                                    showToast(data.message, data.type, data.title);
+                                    btn.disabled = false;
+                                    if(data.type === 'success' || (data.type === 'info' && data.request_id)){
+                                        reqId = data.request_id || reqId;
+                                        havingRequest = true;
+                                        btn.innerHTML = '<i class="fas fa-xmark"></i> Cancel Request';
+                                    }
+                                })
+                                .catch(function(){
+                                    btn.disabled = false;
+                                    showToast('Could not reach the server. Please try again.', 'error', 'Error');
+                                });
+                        }
+                    });
+                }
+                <?php endif; ?>
+            });
+        }
+        <?php endif; ?>
     </script>
+    <?php include(__DIR__ . '/popup.php'); ?>
 </body>
 </html>
