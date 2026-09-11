@@ -8,6 +8,8 @@ CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     full_name VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL,
+    phone VARCHAR(20) DEFAULT '',
+    phone2 VARCHAR(20) DEFAULT '',
     password VARCHAR(255) NOT NULL,
     is_admin INT DEFAULT 0,
     status INT DEFAULT 0

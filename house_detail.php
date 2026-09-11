@@ -179,6 +179,7 @@ $rentHref  = isset($_SESSION['user_id'])
         <div class="nav-right">
             <?php if(isset($_SESSION['user_id'])): ?>
                 <a href="post_house.php" class="btn-accent"><i class="fas fa-plus"></i> New Posts</a>
+                <a href="profile.php"><i class="fas fa-user-circle"></i> Profile</a>
                 <a href="manage_houses.php"><i class="fas fa-th-large"></i> Dashboard</a>
             <?php else: ?>
                 <a href="login.php"><i class="fas fa-right-to-bracket"></i> Login</a>

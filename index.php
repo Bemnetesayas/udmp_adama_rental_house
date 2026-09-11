@@ -213,6 +213,7 @@ if(isset($_SESSION['user_id'])){
                         </div>
                         <div class="user-dropdown-divider"></div>
                         <a href="manage_houses.php"><i class="fas fa-th-large"></i> Dashboard</a>
+                        <a href="profile.php"><i class="fas fa-user"></i> My Profile</a>
                         <a href="logout.php" class="logout"><i class="fas fa-right-from-bracket"></i> Sign Out</a>
                     </div>
                 </div>
