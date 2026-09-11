@@ -135,15 +135,6 @@ if(isset($_SESSION['user_id'])){
         .card-amenity i{color:#0d9488;font-size:10px}
         .card-meta{display:flex;align-items:center;justify-content:space-between;padding-top:12px;border-top:1px solid #f1f5f9}
         .card-owner{font-size:12px;color:#94a3b8;display:flex;align-items:center;gap:4px}
-        .card-actions{display:flex;gap:6px}
-        .card-actions a{padding:7px 12px;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none;transition:all .2s}
-        .btn-phone{background:rgba(13,148,136,.1);color:#0d9488}
-        .btn-phone:hover{background:#0d9488;color:#fff}
-        .btn-map{background:rgba(59,130,246,.1);color:#3b82f6}
-        .btn-map:hover{background:#3b82f6;color:#fff}
-        .btn-rent{background:linear-gradient(135deg,#0d9488,#14b8a6);color:#fff}
-        .btn-rent:hover{box-shadow:0 4px 15px rgba(13,148,136,.4);transform:translateY(-1px)}
-        .phone-hidden{background:#f8f9fa;color:#9ca3af;padding:7px 12px;border-radius:8px;font-size:12px;font-weight:500}
 
         .empty-state{text-align:center;padding:80px 20px;grid-column:1/-1}
         .empty-state i{font-size:48px;color:#d1d5db;margin-bottom:16px}
@@ -334,17 +325,6 @@ if(isset($_SESSION['user_id'])){
                         <?php endif; ?>
                         <div class="card-meta">
                             <div class="card-owner"><i class="fas fa-user"></i> <?php echo htmlspecialchars($row['full_name'] ?? 'Private'); ?></div>
-                            <div class="card-actions">
-                                <?php if($status == 'Available'): ?>
-                                    <a href="<?php echo isset($_SESSION['user_id']) ? 'rent_request.php?house=' . $row['id'] : 'login.php?redirect=' . urlencode('rent_request.php?house=' . $row['id']); ?>" class="btn-rent"><i class="fas fa-hand-holding-heart"></i> Rent</a>
-                                    <a href="tel:<?php echo htmlspecialchars($row['phone']); ?>" class="btn-phone"><i class="fas fa-phone"></i> Call</a>
-                                <?php else: ?>
-                                    <span class="phone-hidden"><i class="fas fa-lock"></i> Rented</span>
-                                <?php endif; ?>
-                                <?php if(!empty($row['map_link'])): ?>
-                                    <a href="<?php echo htmlspecialchars($row['map_link']); ?>" target="_blank" class="btn-map"><i class="fas fa-map-marker-alt"></i> Map</a>
-                                <?php endif; ?>
-                            </div>
                         </div>
                     </div>
                 </div>
