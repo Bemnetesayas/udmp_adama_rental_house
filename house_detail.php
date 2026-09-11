@@ -68,6 +68,7 @@ $rentHref  = isset($_SESSION['user_id'])
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
+        html{scroll-behavior:smooth}
         body{font-family:'Inter',system-ui,sans-serif;background:#f1f5f9;color:#1e293b;min-height:100vh;display:flex;flex-direction:column}
 
         /* NAVBAR */
@@ -77,10 +78,15 @@ $rentHref  = isset($_SESSION['user_id'])
         .nav-brand-text{color:#fff;font-size:18px;font-weight:800}
         .nav-brand-text span{color:#2dd4bf}
         .nav-right{display:flex;align-items:center;gap:6px}
-        .nav-right a{color:rgba(255,255,255,.8);text-decoration:none;font-size:13px;font-weight:500;padding:8px 14px;border-radius:8px;transition:all .2s}
+        .nav-right a{position:relative;color:rgba(255,255,255,.8);text-decoration:none;font-size:13px;font-weight:500;padding:8px 14px;border-radius:8px;transition:background .25s cubic-bezier(.4,0,.2,1),color .25s}
+        .nav-right a::after{content:'';position:absolute;left:14px;bottom:5px;width:0;height:2px;border-radius:2px;background:linear-gradient(90deg,#2dd4bf,#14b8a6);transition:width .3s cubic-bezier(.4,0,.2,1)}
         .nav-right a:hover{color:#fff;background:rgba(255,255,255,.1)}
+        .nav-right a:hover::after{width:calc(100% - 28px)}
+        .nav-right a i{transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
+        .nav-right a:hover i{transform:translateX(3px)}
         .nav-right .btn-accent{background:linear-gradient(135deg,#0d9488,#14b8a6);color:#fff;font-weight:600}
-        .nav-right .btn-accent:hover{box-shadow:0 4px 15px rgba(13,148,136,.4)}
+        .nav-right .btn-accent:hover{box-shadow:0 4px 15px rgba(13,148,136,.4);transform:translateY(-1px)}
+        .nav-right .btn-accent:hover i{transform:rotate(90deg) scale(1.15)}
 
         /* LAYOUT */
         .page{max-width:1150px;margin:0 auto;width:100%;padding:20px 24px 60px;flex:1}

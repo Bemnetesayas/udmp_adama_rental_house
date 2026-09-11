@@ -41,6 +41,7 @@ foreach($rental_reqs as $r){ if($r['req_status'] === 'pending') $pending_req_cou
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
+        html{scroll-behavior:smooth}
         body{font-family:'Inter',system-ui,sans-serif;background:#f8fafc;color:#1e293b;min-height:100vh}
 
         /* NAVBAR */
@@ -50,14 +51,19 @@ foreach($rental_reqs as $r){ if($r['req_status'] === 'pending') $pending_req_cou
         .nav-brand-text{color:#fff;font-size:18px;font-weight:800}
         .nav-brand-text span{color:#2dd4bf}
         .nav-right{display:flex;align-items:center;gap:6px}
-        .nav-right a{color:rgba(255,255,255,.8);text-decoration:none;font-size:13px;font-weight:500;padding:8px 14px;border-radius:8px;transition:all .2s}
+        .nav-right a{position:relative;color:rgba(255,255,255,.8);text-decoration:none;font-size:13px;font-weight:500;padding:8px 14px;border-radius:8px;transition:background .25s cubic-bezier(.4,0,.2,1),color .25s}
+        .nav-right a::after{content:'';position:absolute;left:14px;bottom:5px;width:0;height:2px;border-radius:2px;background:linear-gradient(90deg,#2dd4bf,#14b8a6);transition:width .3s cubic-bezier(.4,0,.2,1)}
         .nav-right a:hover{color:#fff;background:rgba(255,255,255,.1)}
+        .nav-right a:hover::after{width:calc(100% - 28px)}
+        .nav-right a i{transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
+        .nav-right a:hover i{transform:translateX(3px)}
         .nav-right .btn-post{background:linear-gradient(135deg,#0d9488,#14b8a6);color:#fff;font-weight:600}
-        .nav-right .btn-post:hover{box-shadow:0 4px 15px rgba(13,148,136,.4)}
+        .nav-right .btn-post:hover{box-shadow:0 4px 15px rgba(13,148,136,.4);transform:translateY(-1px)}
+        .nav-right .btn-post:hover i{transform:rotate(90deg) scale(1.15)}
         .user-avatar-wrap{position:relative}
         .user-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#0d9488,#14b8a6);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;cursor:pointer;border:2px solid rgba(255,255,255,.2);transition:all .2s}
         .user-avatar:hover{border-color:rgba(255,255,255,.5);transform:scale(1.05)}
-        .user-dropdown{position:absolute;top:calc(100% + 8px);right:0;width:220px;background:#1e293b;border-radius:12px;border:1px solid rgba(255,255,255,.1);box-shadow:0 20px 40px rgba(0,0,0,.3);opacity:0;visibility:hidden;transform:translateY(-8px);transition:all .2s;z-index:1001}
+        .user-dropdown{position:absolute;top:calc(100% + 8px);right:0;width:220px;background:#1e293b;border-radius:12px;border:1px solid rgba(255,255,255,.1);box-shadow:0 20px 40px rgba(0,0,0,.3);opacity:0;visibility:hidden;transform:translateY(-8px);transition:opacity .3s cubic-bezier(.34,1.56,.64,1),transform .3s cubic-bezier(.34,1.56,.64,1),visibility .3s;z-index:1001}
         .user-avatar-wrap:hover .user-dropdown{opacity:1;visibility:visible;transform:translateY(0)}
         .user-dropdown-header{padding:16px;display:flex;align-items:center;gap:10px}
         .user-avatar-sm{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#0d9488,#14b8a6);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0}
