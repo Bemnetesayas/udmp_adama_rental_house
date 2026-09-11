@@ -165,6 +165,12 @@ foreach($rental_reqs as $r){ if($r['req_status'] === 'pending') $pending_req_cou
             .card-grid{grid-template-columns:1fr}
             .card-actions{grid-template-columns:1fr}
         }
+        @media(max-width:480px){
+            .navbar{padding:10px 12px}
+            .nav-right .btn-post{font-size:0;padding:9px 11px}
+            .nav-right .btn-post i{font-size:15px}
+            .nav-brand-text{font-size:16px}
+        }
     </style>
 </head>
 <body>

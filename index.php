@@ -156,6 +156,12 @@ if(isset($_SESSION['user_id'])){
             .search-form{flex-direction:column}
             .search-form select,.search-form input{width:100%}
         }
+        @media(max-width:480px){
+            .navbar{padding:10px 12px}
+            .nav-right .btn-accent{font-size:0;padding:9px 11px}
+            .nav-right .btn-accent i{font-size:15px}
+            .nav-brand-text{font-size:16px}
+        }
     </style>
 </head>
 <body>
