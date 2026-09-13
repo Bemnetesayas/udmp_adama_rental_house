@@ -36,6 +36,7 @@ if(isset($_SESSION['user_id'])){
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
+        html{scroll-behavior:smooth}
         body{font-family:'Inter',system-ui,sans-serif;background:#f8fafc;color:#1e293b;min-height:100vh;display:flex;flex-direction:column}
 
         /* NAVBAR */
@@ -49,14 +50,19 @@ if(isset($_SESSION['user_id'])){
         .nav-home-btn:hover{color:#fff;background:rgba(255,255,255,.08)}
         .nav-home-btn.active{color:#fff;background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.12)}
         .nav-right{display:flex;align-items:center;gap:6px}
-        .nav-right a{color:rgba(255,255,255,.8);text-decoration:none;font-size:13px;font-weight:500;padding:8px 14px;border-radius:8px;transition:all .2s}
+        .nav-right a{position:relative;color:rgba(255,255,255,.8);text-decoration:none;font-size:13px;font-weight:500;padding:8px 14px;border-radius:8px;transition:background .25s cubic-bezier(.4,0,.2,1),color .25s}
+        .nav-right a::after{content:'';position:absolute;left:14px;bottom:5px;width:0;height:2px;border-radius:2px;background:linear-gradient(90deg,#2dd4bf,#14b8a6);transition:width .3s cubic-bezier(.4,0,.2,1)}
         .nav-right a:hover{color:#fff;background:rgba(255,255,255,.1)}
+        .nav-right a:hover::after{width:calc(100% - 28px)}
+        .nav-right a i{transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
+        .nav-right a:hover i{transform:translateX(3px)}
         .nav-right .btn-accent{background:linear-gradient(135deg,#0d9488,#14b8a6);color:#fff;font-weight:600}
-        .nav-right .btn-accent:hover{box-shadow:0 4px 15px rgba(13,148,136,.4)}
+        .nav-right .btn-accent:hover{box-shadow:0 4px 15px rgba(13,148,136,.4);transform:translateY(-1px)}
+        .nav-right .btn-accent:hover i{transform:rotate(90deg) scale(1.15)}
         .user-avatar-wrap{position:relative}
         .user-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#0d9488,#14b8a6);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;cursor:pointer;border:2px solid rgba(255,255,255,.2);transition:all .2s}
         .user-avatar:hover{border-color:rgba(255,255,255,.5);transform:scale(1.05)}
-        .user-dropdown{position:absolute;top:calc(100% + 8px);right:0;width:220px;background:#1e293b;border-radius:12px;border:1px solid rgba(255,255,255,.1);box-shadow:0 20px 40px rgba(0,0,0,.3);opacity:0;visibility:hidden;transform:translateY(-8px);transition:all .2s;z-index:1001}
+        .user-dropdown{position:absolute;top:calc(100% + 8px);right:0;width:220px;background:#1e293b;border-radius:12px;border:1px solid rgba(255,255,255,.1);box-shadow:0 20px 40px rgba(0,0,0,.3);opacity:0;visibility:hidden;transform:translateY(-8px);transition:opacity .3s cubic-bezier(.34,1.56,.64,1),transform .3s cubic-bezier(.34,1.56,.64,1),visibility .3s;z-index:1001}
         .user-avatar-wrap:hover .user-dropdown{opacity:1;visibility:visible;transform:translateY(0)}
         .user-dropdown-header{padding:16px;display:flex;align-items:center;gap:10px}
         .user-avatar-sm{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#0d9488,#14b8a6);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0}
@@ -70,11 +76,13 @@ if(isset($_SESSION['user_id'])){
 
         /* NOTIFICATION BELL */
         .bell-wrap{position:relative}
-        .bell-btn{position:relative;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:#fff;cursor:pointer;transition:all .2s}
-        .bell-btn:hover{background:rgba(255,255,255,.14)}
+        .bell-btn{position:relative;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:#fff;cursor:pointer;transition:background .25s cubic-bezier(.4,0,.2,1),transform .25s}
+        .bell-btn:hover{background:rgba(255,255,255,.14);transform:scale(1.08)}
+        .bell-btn:hover i{animation:bellShake .5s ease}
+        @keyframes bellShake{0%,100%{transform:rotate(0)}20%{transform:rotate(14deg)}40%{transform:rotate(-10deg)}60%{transform:rotate(8deg)}80%{transform:rotate(-4deg)}}
         .bell-btn i{font-size:15px}
         .bell-badge{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;background:#ef4444;color:#fff;border-radius:50%;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px;border:2px solid #0f172a}
-        .notif-dropdown{position:absolute;top:calc(100% + 10px);right:0;width:340px;max-width:calc(100vw - 32px);background:#1e293b;border-radius:12px;border:1px solid rgba(255,255,255,.1);box-shadow:0 20px 40px rgba(0,0,0,.3);opacity:0;visibility:hidden;transform:translateY(-8px);transition:all .2s;z-index:1002}
+        .notif-dropdown{position:absolute;top:calc(100% + 10px);right:0;width:340px;max-width:calc(100vw - 32px);background:#1e293b;border-radius:12px;border:1px solid rgba(255,255,255,.1);box-shadow:0 20px 40px rgba(0,0,0,.3);opacity:0;visibility:hidden;transform:translateY(-8px);transition:opacity .3s cubic-bezier(.34,1.56,.64,1),transform .3s cubic-bezier(.34,1.56,.64,1),visibility .3s;z-index:1002}
         .bell-wrap.open .notif-dropdown{opacity:1;visibility:visible;transform:translateY(0)}
         .notif-header{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:space-between}
         .notif-header h4{color:#f1f5f9;font-size:14px;font-weight:700}
@@ -135,15 +143,6 @@ if(isset($_SESSION['user_id'])){
         .card-amenity i{color:#0d9488;font-size:10px}
         .card-meta{display:flex;align-items:center;justify-content:space-between;padding-top:12px;border-top:1px solid #f1f5f9}
         .card-owner{font-size:12px;color:#94a3b8;display:flex;align-items:center;gap:4px}
-        .card-actions{display:flex;gap:6px}
-        .card-actions a{padding:7px 12px;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none;transition:all .2s}
-        .btn-phone{background:rgba(13,148,136,.1);color:#0d9488}
-        .btn-phone:hover{background:#0d9488;color:#fff}
-        .btn-map{background:rgba(59,130,246,.1);color:#3b82f6}
-        .btn-map:hover{background:#3b82f6;color:#fff}
-        .btn-rent{background:linear-gradient(135deg,#0d9488,#14b8a6);color:#fff}
-        .btn-rent:hover{box-shadow:0 4px 15px rgba(13,148,136,.4);transform:translateY(-1px)}
-        .phone-hidden{background:#f8f9fa;color:#9ca3af;padding:7px 12px;border-radius:8px;font-size:12px;font-weight:500}
 
         .empty-state{text-align:center;padding:80px 20px;grid-column:1/-1}
         .empty-state i{font-size:48px;color:#d1d5db;margin-bottom:16px}
@@ -156,6 +155,12 @@ if(isset($_SESSION['user_id'])){
             .listings{padding:16px}
             .search-form{flex-direction:column}
             .search-form select,.search-form input{width:100%}
+        }
+        @media(max-width:480px){
+            .navbar{padding:10px 12px}
+            .nav-right .btn-accent{font-size:0;padding:9px 11px}
+            .nav-right .btn-accent i{font-size:15px}
+            .nav-brand-text{font-size:16px}
         }
     </style>
 </head>
@@ -213,6 +218,7 @@ if(isset($_SESSION['user_id'])){
                         </div>
                         <div class="user-dropdown-divider"></div>
                         <a href="manage_houses.php"><i class="fas fa-th-large"></i> Dashboard</a>
+                        <a href="profile.php"><i class="fas fa-user"></i> My Profile</a>
                         <a href="logout.php" class="logout"><i class="fas fa-right-from-bracket"></i> Sign Out</a>
                     </div>
                 </div>
@@ -333,17 +339,6 @@ if(isset($_SESSION['user_id'])){
                         <?php endif; ?>
                         <div class="card-meta">
                             <div class="card-owner"><i class="fas fa-user"></i> <?php echo htmlspecialchars($row['full_name'] ?? 'Private'); ?></div>
-                            <div class="card-actions">
-                                <?php if($status == 'Available'): ?>
-                                    <a href="<?php echo isset($_SESSION['user_id']) ? 'rent_request.php?house=' . $row['id'] : 'login.php?redirect=' . urlencode('rent_request.php?house=' . $row['id']); ?>" class="btn-rent"><i class="fas fa-hand-holding-heart"></i> Rent</a>
-                                    <a href="tel:<?php echo htmlspecialchars($row['phone']); ?>" class="btn-phone"><i class="fas fa-phone"></i> Call</a>
-                                <?php else: ?>
-                                    <span class="phone-hidden"><i class="fas fa-lock"></i> Rented</span>
-                                <?php endif; ?>
-                                <?php if(!empty($row['map_link'])): ?>
-                                    <a href="<?php echo htmlspecialchars($row['map_link']); ?>" target="_blank" class="btn-map"><i class="fas fa-map-marker-alt"></i> Map</a>
-                                <?php endif; ?>
-                            </div>
                         </div>
                     </div>
                 </div>

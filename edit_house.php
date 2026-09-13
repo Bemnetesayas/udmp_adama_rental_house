@@ -115,6 +115,12 @@ endif;
         .btn-save:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(13,148,136,.4)}
         .btn-cancel{padding:12px 20px;background:#f1f5f9;color:#475569;border:none;border-radius:10px;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;text-decoration:none;transition:all .2s}
         .btn-cancel:hover{background:#e2e8f0}
+        @media(max-width:480px){
+            .navbar{padding:11px 12px}
+            .nav-right a{padding:7px 10px;font-size:12px}
+            .form-page{padding:0 14px;margin:20px auto}
+            .form-card{padding:20px}
+        }
     </style>
 </head>
 <body>

@@ -4,8 +4,15 @@ include('session_config.php');
 session_start();
 
 // Tenant "rent request" action — requires login.
+$isAjax = (($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'XMLHttpRequest') || isset($_GET['ajax']);
 if(!isset($_SESSION['user_id'])){
-    header("Location: login.php?redirect=" . urlencode('rent_request.php?house=' . (int)($_GET['house'] ?? 0)));
+    $redir = "login.php?redirect=" . urlencode('rent_request.php?house=' . (int)($_GET['house'] ?? 0));
+    if($isAjax){
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['type' => 'login_needed', 'message' => 'You need to sign in to request this property.', 'title' => 'Sign in required', 'redirect' => $redir]);
+        exit();
+    }
+    header("Location: " . $redir);
     exit();
 }
 
@@ -29,16 +36,17 @@ if($house_id <= 0){
         } else {
             // Prevent duplicate pending rental requests for the same user + house
             $dup = mysqli_query($conn, "SELECT id FROM rental_requests WHERE user_id=$uid AND house_id=$house_id AND status='pending'");
-            if($dup && mysqli_num_rows($dup) > 0){
-                $status = ['type' => 'info', 'message' => 'You already requested this property. The owner has been notified.', 'title' => 'Already requested', 'redirect' => 'index.php'];
+            if($dup && ($dupRow = mysqli_fetch_assoc($dup))){
+                $status = ['type' => 'info', 'message' => 'You already requested this property. The owner has been notified.', 'title' => 'Already requested', 'redirect' => 'index.php', 'request_id' => (int)$dupRow['id']];
             } else {
                 $ins = mysqli_query($conn, "INSERT INTO rental_requests (user_id, house_id, status, created_at) VALUES ($uid, $house_id, 'pending', NOW())");
                 if($ins){
+                    $newReqId = (int)mysqli_insert_id($conn);
                     // Notify the property owner
                     $requester = mysqli_real_escape_string($conn, $_SESSION['user_name'] ?? 'A user');
                     $notifMsg = $requester . ' requested to rent your property in Kebele ' . $house['kebele'] . '.';
                     mysqli_query($conn, "INSERT INTO notifications (user_id, type, title, message, link) VALUES ('{$house['user_id']}', 'rent_request', 'New rental request', '" . mysqli_real_escape_string($conn, $notifMsg) . "', 'manage_houses.php')");
-                    $status = ['type' => 'success', 'message' => 'Your rental request was sent to the property owner. They will contact you soon.', 'title' => 'Request sent', 'redirect' => 'index.php'];
+                    $status = ['type' => 'success', 'message' => 'Your rental request was sent to the property owner. They will contact you soon.', 'title' => 'Request sent', 'redirect' => 'index.php', 'request_id' => $newReqId];
                 } else {
                     $status = ['type' => 'error', 'message' => 'Something went wrong. Please try again.', 'title' => 'Error', 'redirect' => 'index.php'];
                 }
@@ -47,6 +55,9 @@ if($house_id <= 0){
     }
 }
 ?>
+<?php if($isAjax): ?>
+    <?php header('Content-Type: application/json; charset=utf-8'); echo json_encode($status); ?>
+<?php else: ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -66,3 +77,4 @@ if($house_id <= 0){
     </script>
 </body>
 </html>
+<?php endif; ?>

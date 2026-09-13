@@ -18,6 +18,17 @@ if(!isset($current_page)) $current_page = basename($_SERVER['PHP_SELF']);
 .sidebar-footer{margin-top:auto;padding:12px 0;border-top:1px solid rgba(255,255,255,.06)}
 .sidebar-footer a{display:flex;align-items:center;justify-content:center;gap:8px;padding:11px;border-radius:10px;text-decoration:none;font-weight:600;font-size:14px;background:rgba(239,68,68,.1);color:#fca5a5;transition:all .2s}
 .sidebar-footer a:hover{background:rgba(239,68,68,.2);color:#fca5a5}
+
+/* Mobile: collapse the fixed sidebar into an in-flow horizontal nav bar */
+@media(max-width:768px){
+    .sidebar{position:static;width:100%;height:auto;flex-direction:row;align-items:center;gap:2px;padding:10px 14px;overflow-x:auto;justify-content:flex-start;-webkit-overflow-scrolling:touch}
+    .sidebar-brand{margin-bottom:0;flex-shrink:0}
+    .sidebar-label{display:none}
+    .sidebar .nav-link{width:auto;flex-shrink:0;margin-bottom:0;padding:9px 12px;white-space:nowrap;font-size:13px}
+    .sidebar .nav-link i{display:none}
+    .sidebar-footer{margin-top:0;border-top:none;padding:0;flex-shrink:0}
+    .sidebar-footer a{padding:9px 12px;white-space:nowrap}
+}
 </style>
 
 <div class="sidebar">

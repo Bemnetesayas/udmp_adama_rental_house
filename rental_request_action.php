@@ -8,12 +8,38 @@ if(!isset($_SESSION['user_id'])){
     exit();
 }
 
+$isAjax = (($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'XMLHttpRequest') || isset($_GET['ajax']);
 $id = (int)($_GET['id'] ?? 0);
 $action = $_GET['action'] ?? '';
 $me = (int)$_SESSION['user_id'];
 
-if($id <= 0 || !in_array($action, ['accept', 'reject'], true)){
+if($id <= 0 || !in_array($action, ['accept', 'reject', 'cancel'], true)){
     header("Location: manage_houses.php");
+    exit();
+}
+
+// Tenant withdraws their own pending rental request
+if($action === 'cancel'){
+    $rr = mysqli_fetch_assoc(mysqli_query($conn, "
+        SELECT rr.*, h.user_id AS house_owner, h.kebele
+        FROM rental_requests rr
+        JOIN houses h ON rr.house_id = h.id
+        WHERE rr.id=$id AND rr.user_id=$me AND rr.status='pending'
+    "));
+    if(!$rr){
+        $resp = ['type' => 'info', 'message' => 'This rental request is no longer pending.', 'title' => 'No action', 'redirect' => 'index.php'];
+    } else {
+        mysqli_query($conn, "UPDATE rental_requests SET status='cancelled' WHERE id=$id");
+        $msg = mysqli_real_escape_string($conn, (($_SESSION['user_name'] ?? 'A tenant') . ' cancelled their request for the property in Kebele ' . $rr['kebele'] . '.'));
+        mysqli_query($conn, "INSERT INTO notifications (user_id, type, title, message, link) VALUES ({$rr['house_owner']}, 'info', 'Rental request cancelled', '$msg', 'manage_houses.php')");
+        $resp = ['type' => 'success', 'message' => 'Your rental request was cancelled.', 'title' => 'Request cancelled', 'redirect' => 'house_detail.php?house=' . (int)$rr['house_id']];
+    }
+    if($isAjax){
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode($resp);
+        exit();
+    }
+    header("Location: " . $resp['redirect']);
     exit();
 }
 

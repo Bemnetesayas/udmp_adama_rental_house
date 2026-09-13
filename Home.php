@@ -27,16 +27,22 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;color:#1e293b;overfl
 .nav-brand-text span{color:#2dd4bf}
 .nav-links{display:flex;align-items:center;gap:8px;justify-self:end}
 .nav-center{display:flex;align-items:center;gap:4px;justify-self:center;border-radius:12px;padding:4px;backdrop-filter:blur(10px)}
-.nav-center a{color:rgba(255,255,255,.75);text-decoration:none;font-size:14px;font-weight:500;padding:8px 18px;border-radius:10px;transition:all .2s}
+.nav-center a{color:rgba(255,255,255,.75);text-decoration:none;font-size:14px;font-weight:500;padding:8px 18px;border-radius:10px;position:relative;transition:background .25s cubic-bezier(.4,0,.2,1),color .25s}
+.nav-center a::after{content:'';position:absolute;left:18px;bottom:6px;width:0;height:2px;border-radius:2px;background:linear-gradient(90deg,#2dd4bf,#14b8a6);transition:width .3s cubic-bezier(.4,0,.2,1)}
 .nav-center a:hover{color:#fff;background:rgba(255,255,255,.12)}
-.nav-links a{color:rgba(255,255,255,.85);text-decoration:none;font-size:14px;font-weight:500;padding:8px 16px;border-radius:8px;transition:all .2s}
+.nav-center a:hover::after{width:calc(100% - 36px)}
+.nav-links a{color:rgba(255,255,255,.85);text-decoration:none;font-size:14px;font-weight:500;padding:8px 16px;border-radius:8px;position:relative;transition:background .25s cubic-bezier(.4,0,.2,1),color .25s}
+.nav-links a::after{content:'';position:absolute;left:16px;bottom:5px;width:0;height:2px;border-radius:2px;background:linear-gradient(90deg,#2dd4bf,#14b8a6);transition:width .3s cubic-bezier(.4,0,.2,1)}
 .nav-links a:hover{color:#fff;background:rgba(255,255,255,.1)}
-.nav-links .btn-nav{background:linear-gradient(135deg,#0d9488,#14b8a6);color:#fff;padding:10px 22px;border-radius:10px;font-weight:600}
+.nav-links a:hover::after{width:calc(100% - 32px)}
+.nav-links .btn-nav{background:linear-gradient(135deg,#0d9488,#14b8a6);color:#fff;padding:10px 22px;border-radius:10px;font-weight:600;transition:transform .25s cubic-bezier(.34,1.56,.64,1),box-shadow .25s}
 .nav-links .btn-nav:hover{transform:translateY(-1px);box-shadow:0 4px 15px rgba(13,148,136,.4)}
+.nav-links .btn-nav i{transition:transform .35s cubic-bezier(.34,1.56,.64,1)}
+.nav-links .btn-nav:hover i{transform:rotate(90deg) scale(1.15)}
 .user-avatar-wrap{position:relative}
 .user-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#0d9488,#14b8a6);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;cursor:pointer;border:2px solid rgba(255,255,255,.2);transition:all .2s}
 .user-avatar:hover{border-color:rgba(255,255,255,.5);transform:scale(1.05)}
-.user-dropdown{position:absolute;top:calc(100% + 8px);right:0;width:220px;background:#1e293b;border-radius:12px;border:1px solid rgba(255,255,255,.1);box-shadow:0 20px 40px rgba(0,0,0,.3);opacity:0;visibility:hidden;transform:translateY(-8px);transition:all .2s;z-index:1001}
+.user-dropdown{position:absolute;top:calc(100% + 8px);right:0;width:220px;background:#1e293b;border-radius:12px;border:1px solid rgba(255,255,255,.1);box-shadow:0 20px 40px rgba(0,0,0,.3);opacity:0;visibility:hidden;transform:translateY(-8px);transition:opacity .3s cubic-bezier(.34,1.56,.64,1),transform .3s cubic-bezier(.34,1.56,.64,1),visibility .3s;z-index:1001}
 .user-avatar-wrap:hover .user-dropdown{opacity:1;visibility:visible;transform:translateY(0)}
 .user-dropdown-header{padding:16px;display:flex;align-items:center;gap:10px}
 .user-avatar-sm{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#0d9488,#14b8a6);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0}
@@ -151,6 +157,7 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;color:#1e293b;overfl
                     </div>
                     <div class="user-dropdown-divider"></div>
                     <a href="manage_houses.php"><i class="fas fa-th-large"></i> Dashboard</a>
+                    <a href="profile.php"><i class="fas fa-user"></i> My Profile</a>
                     <a href="logout.php" class="logout"><i class="fas fa-right-from-bracket"></i> Sign Out</a>
                 </div>
             </div>

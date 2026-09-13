@@ -167,6 +167,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#0d9488;box-sh
 @media(max-width:768px){
     .main-content,.main,.content{margin-left:0;padding:16px;width:100%}
     th,td{padding:10px 12px}
+    .data-card{overflow-x:auto;-webkit-overflow-scrolling:touch}
+    .data-card table{min-width:640px}
     .req-img{flex:0 0 100px}
     .req-img img,.req-img .no-img{width:100px;height:80px}
     .request-card{flex-direction:column}
