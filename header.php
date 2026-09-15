@@ -21,6 +21,14 @@ $current_page = basename($_SERVER['PHP_SELF']);
     function findMain(doc){
         return doc.querySelector('.main-content') || doc.querySelector('.main') || doc.querySelector('.content') || doc.querySelector('main');
     }
+    function syncActive(href){
+        var base = href.split('?')[0].split('#')[0];
+        base = base.substr(base.lastIndexOf('/') + 1);
+        document.querySelectorAll('.sidebar .nav-link').forEach(function(link){
+            var lh = link.getAttribute('href').split('?')[0];
+            link.classList.toggle('active', lh === base);
+        });
+    }
     document.addEventListener('click', function(e){
         var a = e.target.closest('.nav-link');
         if(!a) return;
@@ -39,6 +47,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
                 if(newMain && curMain){
                     curMain.innerHTML = newMain.innerHTML;
                     history.pushState({ajax:true}, '', href);
+                    syncActive(href);
                 } else {
                     window.location = href;
                 }
@@ -53,7 +62,10 @@ $current_page = basename($_SERVER['PHP_SELF']);
                 var doc = parser.parseFromString(html, 'text/html');
                 var newMain = findMain(doc);
                 var curMain = findMain(document);
-                if(newMain && curMain) curMain.innerHTML = newMain.innerHTML;
+                if(newMain && curMain){
+                    curMain.innerHTML = newMain.innerHTML;
+                    syncActive(href);
+                }
             });
     });
 })();

@@ -110,4 +110,51 @@
     window.showToast = showToast;
     window.adamaConfirm = openConfirm;
 })();
+// Admin helpers (defined globally so they survive AJAX content swaps)
+window.confirmUserDelete = function(id){
+    adamaConfirm({
+        title: "Delete user",
+        message: "Delete this user permanently? This cannot be undone.",
+        confirmText: "Delete",
+        onConfirm: function(){ var f = document.getElementById('del-user-' + id); if(f) f.submit(); }
+    });
+};
+window.confirmRevokeAdmin = function(id){
+    adamaConfirm({
+        title: "Revoke admin role",
+        message: "Revoke this user's admin role? They will become a landlord.",
+        confirmText: "Revoke",
+        onConfirm: function(){ var f = document.getElementById('revoke-user-' + id); if(f) f.submit(); }
+    });
+};
+// House listing helpers (manage houses — must survive AJAX content swaps)
+window.showDetails = function(name, price, desc, img){
+    var l = document.getElementById('modalLandlord');
+    var p = document.getElementById('modalPrice');
+    var d = document.getElementById('modalDesc');
+    var im = document.getElementById('modalImg');
+    var m = document.getElementById('viewModal');
+    if(l) l.innerText = name;
+    if(p) p.innerText = price;
+    if(d) d.innerText = desc || 'No description provided.';
+    if(im) im.src = "uploads/" + img;
+    if(m) m.style.display = "block";
+};
+window.closeModal = function(){
+    var m = document.getElementById('viewModal');
+    if(m) m.style.display = "none";
+};
+document.addEventListener('click', function(e){
+    if(e.target && e.target.classList && e.target.classList.contains('modal')){
+        e.target.style.display = 'none';
+    }
+});
+window.confirmListingDelete = function(id){
+    adamaConfirm({
+        title: "Delete listing",
+        message: "Delete this listing permanently? This cannot be undone.",
+        confirmText: "Delete",
+        onConfirm: function(){ var f = document.getElementById('del-house-' + id); if(f) f.submit(); }
+    });
+};
 </script>

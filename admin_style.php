@@ -2,10 +2,10 @@
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Inter',system-ui,sans-serif;background:#f1f5f9;color:#1e293b;margin:0}
 
-.main-content,.main{margin-left:260px;padding:40px;width:calc(100% - 260px);min-height:100vh}
+.main-content,.main{margin-left:260px;padding:40px;width:calc(100% - 260px);min-height:100vh;transition:margin-left .28s cubic-bezier(.4,0,.2,1),width .28s cubic-bezier(.4,0,.2,1)}
 
 /* Layout */
-.content{margin-left:260px;padding:40px;width:calc(100% - 260px);min-height:100vh}
+.content{margin-left:260px;padding:40px;width:calc(100% - 260px);min-height:100vh;transition:margin-left .28s cubic-bezier(.4,0,.2,1),width .28s cubic-bezier(.4,0,.2,1)}
 .page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px}
 .page-title{display:flex;align-items:center;gap:12px}
 .page-title h1{font-size:24px;font-weight:800;color:#0f172a;letter-spacing:-.5px}
@@ -165,7 +165,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#0d9488;box-sh
 
 /* Responsive */
 @media(max-width:768px){
-    .main-content,.main,.content{margin-left:0;padding:16px;width:100%}
+    .main-content,.main,.content{margin-left:0;padding:16px;padding-top:64px;width:100%;transition:none}
     th,td{padding:10px 12px}
     .data-card{overflow-x:auto;-webkit-overflow-scrolling:touch}
     .data-card table{min-width:640px}
