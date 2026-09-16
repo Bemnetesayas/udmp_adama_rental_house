@@ -60,6 +60,7 @@ function renderPropertyCard($row, $all_amenities, $house_amenities, $house_image
                         <img src="uploads/<?php echo htmlspecialchars($row['image']); ?>" alt="Property" loading="lazy">
                         <span class="card-badge <?php echo $badgeClass; ?>"><?php echo htmlspecialchars($status); ?></span>
                         <span class="card-category"><?php echo htmlspecialchars($row['category']); ?></span>
+                        <span class="card-photos-count"><i class="fas fa-camera"></i> <?php echo (1 + count($images)); ?></span>
                     </div>
                     <?php if(!empty($images)): ?>
                     <div class="card-thumbs">
@@ -239,6 +240,8 @@ $house_images = loadHouseImages($conn);
         .badge-available{background:rgba(16,185,129,.9);color:#fff}
         .badge-rented{background:rgba(239,68,68,.9);color:#fff}
         .card-category{position:absolute;top:12px;right:12px;background:rgba(255,255,255,.92);color:#0f172a;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;backdrop-filter:blur(8px)}
+        .card-photos-count{position:absolute;bottom:12px;right:12px;background:rgba(15,23,42,.72);color:#fff;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:5px;backdrop-filter:blur(8px)}
+        .card-photos-count i{color:#2dd4bf;font-size:10px}
         .card-body{padding:18px}
         .card-price{font-size:22px;font-weight:800;color:#0d9488;margin-bottom:4px}
         .card-price span{font-size:13px;font-weight:500;color:#94a3b8}

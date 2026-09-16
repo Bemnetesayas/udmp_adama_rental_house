@@ -31,6 +31,12 @@ $expires = date('Y-m-d H:i:s', time() + 86400);
 mysqli_query($conn, "UPDATE users SET verify_token='$token', verify_expires='$expires' WHERE id=" . (int)$user['id']);
 
 $_SESSION['verify_pending_email'] = $email;
-send_verification_email($email, $user['full_name'], $token);
-header("Location: $back?resend=sent");
+$mailResult = send_verification_email($email, $user['full_name'], $token);
+$ep = 'email=' . urlencode($email);
+if ($mailResult['ok'] === true) {
+    header("Location: verify_pending.php?$ep&resend=sent");
+} else {
+    $why = ($mailResult['info'] === 'brevo ip not authorized') ? '&why=ip_auth' : '';
+    header("Location: verify_pending.php?$ep&resend=failed$why");
+}
 exit();

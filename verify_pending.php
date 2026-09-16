@@ -14,6 +14,12 @@ $resend_msg = '';
 if (isset($_GET['resend'])) {
     if ($_GET['resend'] === 'sent') {
         $resend_msg = ['ok', 'A fresh verification link has been sent. Check your inbox.'];
+    } elseif ($_GET['resend'] === 'failed') {
+        if (isset($_GET['why']) && $_GET['why'] === 'ip_auth') {
+            $resend_msg = ['err', 'Brevo is blocking this server\'s IP address. Open app.brevo.com → Settings → Security → Authorized IPs, add the IP, then click resend.'];
+        } else {
+            $resend_msg = ['err', 'There was a problem sending the email just now. Please try again in a few minutes.'];
+        }
     } elseif ($_GET['resend'] === 'already') {
         $resend_msg = ['ok', 'This email is already verified — you can sign in now.'];
     } elseif ($_GET['resend'] === 'noaccount') {

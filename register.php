@@ -45,8 +45,15 @@ if(isset($_POST['register'])){
         $sql = "INSERT INTO users (full_name, email, password, email_verified, verify_token, verify_expires) VALUES ('$name', '$email', '$pass', 0, '$token', '$expires')";
         if(mysqli_query($conn, $sql)){
             $_SESSION['verify_pending_email'] = $email;
-            send_verification_email($email, $name, $token);
-            header("Location: verify_pending.php?email=" . urlencode($email));
+            $mailResult = send_verification_email($email, $name, $token);
+            $loc = 'verify_pending.php?email=' . urlencode($email);
+            if ($mailResult['ok'] === false && $mailResult['info'] !== 'dev') {
+                $loc .= '&resend=failed';
+                if ($mailResult['info'] === 'brevo ip not authorized') {
+                    $loc .= '&why=ip_auth';
+                }
+            }
+            header("Location: $loc");
             exit();
         } else {
             $error = "Registration failed. Please try again.";
