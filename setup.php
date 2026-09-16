@@ -21,8 +21,17 @@ if (!$conn) {
         phone2 VARCHAR(20) DEFAULT '',
         password VARCHAR(255) NOT NULL,
         is_admin INT DEFAULT 0,
-        status INT DEFAULT 0
+        status INT DEFAULT 0,
+        email_verified TINYINT(1) NOT NULL DEFAULT 0,
+        verify_token VARCHAR(64) NULL,
+        verify_expires DATETIME NULL
     )");
+
+    $vcols = @mysqli_query($conn, "SHOW COLUMNS FROM users LIKE 'email_verified'");
+    if (!$vcols || mysqli_num_rows($vcols) == 0) {
+        mysqli_query($conn, "ALTER TABLE users ADD COLUMN email_verified TINYINT(1) NOT NULL DEFAULT 0 AFTER status, ADD COLUMN verify_token VARCHAR(64) NULL, ADD COLUMN verify_expires DATETIME NULL");
+        mysqli_query($conn, "UPDATE users SET email_verified=1");
+    }
 
     mysqli_query($conn, "CREATE TABLE IF NOT EXISTS houses (
         id INT AUTO_INCREMENT PRIMARY KEY,

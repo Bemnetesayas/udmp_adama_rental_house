@@ -1,5 +1,8 @@
 <?php
+include('session_config.php');
+session_start();
 include('db.php');
+include('mail_helper.php');
 
 function has_admin(): bool {
     global $conn;
@@ -16,6 +19,8 @@ function setup_key_valid(string $submitted): bool {
     return $key !== '' && hash_equals($key, $submitted);
 }
 
+$google_enabled = defined('GOOGLE_CLIENT_ID') && GOOGLE_CLIENT_ID !== '';
+
 if(isset($_POST['register'])){
     $name = mysqli_real_escape_string($conn, $_POST['full_name']);
     $email = mysqli_real_escape_string($conn, $_POST['email']);
@@ -26,7 +31,7 @@ if(isset($_POST['register'])){
     if($check_email && mysqli_num_rows($check_email) > 0){
         $error = "An account with this email already exists.";
     } elseif ($setup_key !== '' && !has_admin() && setup_key_valid($setup_key)) {
-        $sql = "INSERT INTO users (full_name, email, password, is_admin, status) VALUES ('$name', '$email', '$pass', 2, 1)";
+        $sql = "INSERT INTO users (full_name, email, password, is_admin, status, email_verified) VALUES ('$name', '$email', '$pass', 2, 1, 1)";
         if(mysqli_query($conn, $sql)){
             mysqli_query($conn, "DELETE FROM app_config WHERE config_key='admin_setup_key'");
             header("Location: login.php?setup=admin");
@@ -35,9 +40,13 @@ if(isset($_POST['register'])){
             $error = "Registration failed. Please try again.";
         }
     } else {
-        $sql = "INSERT INTO users (full_name, email, password) VALUES ('$name', '$email', '$pass')";
+        $token = bin2hex(random_bytes(32));
+        $expires = date('Y-m-d H:i:s', time() + 86400); // 24h
+        $sql = "INSERT INTO users (full_name, email, password, email_verified, verify_token, verify_expires) VALUES ('$name', '$email', '$pass', 0, '$token', '$expires')";
         if(mysqli_query($conn, $sql)){
-            header("Location: login.php");
+            $_SESSION['verify_pending_email'] = $email;
+            send_verification_email($email, $name, $token);
+            header("Location: verify_pending.php?email=" . urlencode($email));
             exit();
         } else {
             $error = "Registration failed. Please try again.";
@@ -82,6 +91,10 @@ if(isset($_POST['register'])){
         .form-group input:focus{outline:none;border-color:#0d9488;box-shadow:0 0 0 3px rgba(13,148,136,.1)}
         .btn-submit{width:100%;padding:14px;background:linear-gradient(135deg,#0d9488,#14b8a6);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .3s;margin-top:8px}
         .btn-submit:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(13,148,136,.4)}
+        .divider{display:flex;align-items:center;gap:12px;margin:24px 0 6px;color:#94a3b8;font-size:12px;font-weight:500}
+        .divider::before,.divider::after{content:'';flex:1;height:1px;background:#e2e8f0}
+        .btn-google{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:12px;background:#fff;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;font-weight:600;font-family:inherit;color:#0f172a;cursor:pointer;text-decoration:none;transition:all .2s;margin-top:10px}
+        .btn-google:hover{background:#f8fafc;border-color:#cbd5e1;transform:translateY(-1px)}
         .auth-footer{text-align:center;margin-top:28px;font-size:14px;color:#64748b}
         .auth-footer a{color:#0d9488;text-decoration:none;font-weight:600}
         .auth-footer a:hover{text-decoration:underline}
@@ -160,6 +173,15 @@ if(isset($_POST['register'])){
                 </div>
                 <button type="submit" name="register" class="btn-submit">Create Account</button>
             </form>
+
+            <?php if($google_enabled): ?>
+                <div class="divider">or</div>
+                <a href="google_login.php" class="btn-google">
+                    <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3l5.7-5.7C34.2 6.2 29.5 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.7-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.9 1.2 8 3l5.7-5.7C34.2 6.2 29.5 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.5 0 10.5-2.1 14.2-5.6l-6.6-5.6C29.5 34.4 26.9 36 24 36c-5.2 0-9.7-3.3-11.3-8l-6.5 5C9.5 39.6 16.3 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1c.3 1.2.4 2.5.4 3.9s-.2 2.7-.4 3.9c-1.3 5.6-5.4 10.5-11 12.7l6.6 5.6C43.2 42.2 48 36 48 24c0-1.3-.1-2.7-.4-3.9L43.6 20.1z"/></svg>
+                    Continue with Google
+                </a>
+            <?php endif; ?>
+
             <div class="auth-footer">
                 Already have an account? <a href="login.php">Sign in</a>
             </div>
