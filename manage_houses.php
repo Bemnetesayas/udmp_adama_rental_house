@@ -156,7 +156,7 @@ foreach($rental_reqs as $r){ if($r['req_status'] === 'pending') $pending_req_cou
         .empty-state i{font-size:48px;color:#d1d5db;margin-bottom:16px}
         .empty-state h3{font-size:18px;font-weight:700;color:#374151;margin-bottom:8px}
         .empty-state p{color:#64748b;font-size:14px;margin-bottom:20px}
-        .empty-state a{display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:linear-gradient(135deg,#0d9488,#14b8a6);color:#fff;border-radius:10px;text-decoration:none;font-weight:600;font-size:14px;transition:all .3s}
+        .empty-state a{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:linear-gradient(135deg,#0d9488,#14b8a6);color:#fff;border-radius:10px;text-decoration:none;font-weight:600;font-size:12px;transition:all .3s}
         .empty-state a:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(13,148,136,.4)}
 
         @media(max-width:768px){

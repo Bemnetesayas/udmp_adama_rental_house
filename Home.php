@@ -172,7 +172,6 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;color:#1e293b;overfl
         <div class="hero-gradient"></div>
     </div>
     <div class="hero-content">
-        <div class="hero-badge"><i class="fas fa-bolt"></i> Adama's #1 Rental Platform</div>
         <h1>Find Your Perfect <span>Rental Home</span> in Adama</h1>
         <p>The trusted digital marketplace connecting landlords and tenants across Adama City. Search, compare, and secure your next property.</p>
         <div class="hero-actions">
