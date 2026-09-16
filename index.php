@@ -50,9 +50,10 @@ function buildListingQuery($conn) {
     ];
 }
 
-function renderPropertyCard($row, $all_amenities, $house_amenities) {
+function renderPropertyCard($row, $all_amenities, $house_amenities, $house_images) {
     $status = $row['status'] ?? 'Available';
     $badgeClass = ($status == 'Rented') ? 'badge-rented' : 'badge-available';
+    $images = $house_images[$row['id']] ?? [];
 ?>
                 <div class="card" data-href="house_detail.php?house=<?php echo (int)$row['id']; ?>">
                     <div class="card-img">
@@ -60,6 +61,13 @@ function renderPropertyCard($row, $all_amenities, $house_amenities) {
                         <span class="card-badge <?php echo $badgeClass; ?>"><?php echo htmlspecialchars($status); ?></span>
                         <span class="card-category"><?php echo htmlspecialchars($row['category']); ?></span>
                     </div>
+                    <?php if(!empty($images)): ?>
+                    <div class="card-thumbs">
+                        <?php foreach($images as $img): ?>
+                            <img class="card-thumb" src="uploads/<?php echo htmlspecialchars($img); ?>" alt="Property photo" loading="lazy">
+                        <?php endforeach; ?>
+                    </div>
+                    <?php endif; ?>
                     <div class="card-body">
                         <div class="card-price"><?php echo number_format($row['amount']); ?> <span>ETB/month</span></div>
                         <div class="card-location">
@@ -94,17 +102,25 @@ function loadAmenities($conn) {
     return [$all, $map];
 }
 
+function loadHouseImages($conn) {
+    $map = [];
+    $res = mysqli_query($conn, "SELECT house_id, filename FROM house_images ORDER BY sort_order ASC, id ASC");
+    if($res) { while($r = mysqli_fetch_assoc($res)) $map[$r['house_id']][] = $r['filename']; }
+    return $map;
+}
+
 if(isset($_GET['ajax']) && $_GET['ajax'] == '1') {
     header('Content-Type: text/html; charset=UTF-8');
     $q = buildListingQuery($conn);
     $offset = isset($_GET['offset']) ? max(0, (int)$_GET['offset']) : 0;
     $limit = isset($_GET['limit']) ? min(50, max(1, (int)$_GET['limit'])) : $LISTING_LIMIT;
     list($all_amenities, $house_amenities) = loadAmenities($conn);
+    $house_images = loadHouseImages($conn);
     $res = mysqli_query($conn, $q['sql'] . " LIMIT $limit OFFSET $offset");
     $count = 0;
     if($res && mysqli_num_rows($res) > 0) {
         while($row = mysqli_fetch_assoc($res)) {
-            renderPropertyCard($row, $all_amenities, $house_amenities);
+            renderPropertyCard($row, $all_amenities, $house_amenities, $house_images);
             $count++;
         }
     }
@@ -115,6 +131,7 @@ if(isset($_GET['ajax']) && $_GET['ajax'] == '1') {
 $q = buildListingQuery($conn);
 $total_filtered = (int)mysqli_fetch_row(mysqli_query($conn, "SELECT COUNT(*) FROM houses WHERE " . $q['where']))[0];
 list($all_amenities, $house_amenities) = loadAmenities($conn);
+$house_images = loadHouseImages($conn);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -233,6 +250,22 @@ list($all_amenities, $house_amenities) = loadAmenities($conn);
         .card-amenity i{color:#0d9488;font-size:10px}
         .card-meta{display:flex;align-items:center;justify-content:space-between;padding-top:12px;border-top:1px solid #f1f5f9}
         .card-owner{font-size:12px;color:#94a3b8;display:flex;align-items:center;gap:4px}
+
+        /* THUMBNAILS */
+        .card-thumbs{display:flex;flex-wrap:wrap;gap:6px;padding:10px 12px 0;background:#fff}
+        .card-thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;cursor:pointer;border:2px solid transparent;transition:all .2s;background:#f1f5f9}
+        .card-thumb:hover{border-color:#0d9488;transform:scale(1.08)}
+
+        /* LIGHTBOX */
+        .lb-overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,.92);backdrop-filter:blur(4px);z-index:10000;align-items:center;justify-content:center;padding:24px}
+        .lb-overlay.open{display:flex}
+        .lb-overlay img{max-width:90vw;max-height:82vh;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+        .lb-close{position:absolute;top:20px;right:24px;background:none;border:none;color:#fff;font-size:30px;cursor:pointer;z-index:10001;transition:transform .2s}
+        .lb-close:hover{transform:rotate(90deg)}
+        .lb-nav{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.12);border:none;color:#fff;width:48px;height:48px;border-radius:50%;font-size:20px;cursor:pointer;transition:all .2s;z-index:10001}
+        .lb-nav:hover{background:rgba(255,255,255,.25)}
+        .lb-prev{left:16px}
+        .lb-next{right:16px}
 
         .empty-state{text-align:center;padding:80px 20px;grid-column:1/-1}
         .empty-state i{font-size:48px;color:#d1d5db;margin-bottom:16px}
@@ -365,7 +398,7 @@ list($all_amenities, $house_amenities) = loadAmenities($conn);
             $rendered = 0;
             if($res && mysqli_num_rows($res) > 0) {
                 while($row = mysqli_fetch_assoc($res)) {
-                    renderPropertyCard($row, $all_amenities, $house_amenities);
+                    renderPropertyCard($row, $all_amenities, $house_amenities, $house_images);
                     $rendered++;
                 }
             } else {
@@ -388,6 +421,51 @@ list($all_amenities, $house_amenities) = loadAmenities($conn);
             var href = card.getAttribute('data-href');
             if(href) window.location = href;
         });
+    });
+
+    document.addEventListener('click', function(e){
+        var thumb = e.target.closest('.card-thumb');
+        if(thumb){
+            var thumbs = thumb.parentElement.querySelectorAll('.card-thumb');
+            var idx = Array.prototype.indexOf.call(thumbs, thumb);
+            openLightbox(thumbs, idx);
+        }
+    });
+
+    var lbOverlay = document.getElementById('lbOverlay');
+    var lbImg = document.getElementById('lbImg');
+    var lbGroup = [];
+    var lbIndex = 0;
+
+    function openLightbox(thumbs, idx){
+        lbGroup = Array.prototype.map.call(thumbs, function(t){ return t.src; });
+        lbIndex = idx;
+        showLbImage();
+        lbOverlay.classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+    function showLbImage(){
+        lbImg.src = lbGroup[lbIndex] || '';
+    }
+    function closeLightbox(){
+        lbOverlay.classList.remove('open');
+        document.body.style.overflow = '';
+    }
+    function lbStep(dir){
+        if(!lbGroup.length) return;
+        lbIndex = (lbIndex + dir + lbGroup.length) % lbGroup.length;
+        showLbImage();
+    }
+    lbOverlay.addEventListener('click', function(e){
+        if(e.target === lbOverlay || e.target.closest('.lb-close')) closeLightbox();
+        if(e.target.closest('.lb-prev')) lbStep(-1);
+        if(e.target.closest('.lb-next')) lbStep(1);
+    });
+    document.addEventListener('keydown', function(e){
+        if(!lbOverlay.classList.contains('open')) return;
+        if(e.key === 'Escape') closeLightbox();
+        if(e.key === 'ArrowLeft') lbStep(-1);
+        if(e.key === 'ArrowRight') lbStep(1);
     });
 
     function toggleNotif(btn){
@@ -454,5 +532,12 @@ list($all_amenities, $house_amenities) = loadAmenities($conn);
     </script>
 
     <?php include('footer.php'); ?>
+
+    <div class="lb-overlay" id="lbOverlay">
+        <button class="lb-close" id="lbClose" aria-label="Close"><i class="fas fa-xmark"></i></button>
+        <button class="lb-nav lb-prev" id="lbPrev" aria-label="Previous"><i class="fas fa-chevron-left"></i></button>
+        <img id="lbImg" src="" alt="Property photo">
+        <button class="lb-nav lb-next" id="lbNext" aria-label="Next"><i class="fas fa-chevron-right"></i></button>
+    </div>
 </body>
 </html>
