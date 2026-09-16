@@ -139,23 +139,5 @@ $msg = isset($_GET['msg'], $flash[$_GET['msg']]) ? $flash[$_GET['msg']] : null;
         </table>
     </div>
 </div>
-<script>
-function confirmRevokeAdmin(id){
-    adamaConfirm({
-        title: "Revoke admin role",
-        message: "Revoke this user's admin role? They will become a landlord.",
-        confirmText: "Revoke",
-        onConfirm: function(){ document.getElementById('revoke-user-' + id).submit(); }
-    });
-}
-function confirmUserDelete(id){
-    adamaConfirm({
-        title: "Delete user",
-        message: "Delete this user permanently? This cannot be undone.",
-        confirmText: "Delete",
-        onConfirm: function(){ document.getElementById('del-user-' + id).submit(); }
-    });
-}
-</script>
 </body>
 </html>

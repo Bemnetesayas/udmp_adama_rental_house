@@ -121,26 +121,5 @@ $result = mysqli_query($conn, $sql);
         </div>
     </div>
 </div>
-
-<script>
-function showDetails(name, price, desc, img) {
-    document.getElementById('modalLandlord').innerText = name;
-    document.getElementById('modalPrice').innerText = price;
-    document.getElementById('modalDesc').innerText = desc || 'No description provided.';
-    document.getElementById('modalImg').src = "uploads/" + img;
-    document.getElementById('viewModal').style.display = "block";
-}
-function closeModal() { document.getElementById('viewModal').style.display = "none"; }
-window.onclick = function(e) { if(e.target == document.getElementById('viewModal')) closeModal(); }
-
-function confirmListingDelete(id){
-    adamaConfirm({
-        title: "Delete listing",
-        message: "Delete this listing permanently? This cannot be undone.",
-        confirmText: "Delete",
-        onConfirm: function(){ document.getElementById('del-house-' + id).submit(); }
-    });
-}
-</script>
 </body>
 </html>
