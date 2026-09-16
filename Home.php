@@ -60,8 +60,6 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;color:#1e293b;overfl
 .hero-bg img{width:100%;height:100%;object-fit:cover;opacity:.35}
 .hero-gradient{position:absolute;inset:0;background:linear-gradient(135deg,rgba(15,23,42,.92) 0%,rgba(15,23,42,.7) 50%,rgba(13,148,136,.3) 100%)}
 .hero-content{position:relative;z-index:2;text-align:center;max-width:800px;padding:0 24px}
-.hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(45,212,191,.15);border:1px solid rgba(45,212,191,.3);color:#2dd4bf;padding:8px 20px;border-radius:50px;font-size:13px;font-weight:600;margin-bottom:24px;backdrop-filter:blur(10px)}
-.hero-badge i{font-size:12px}
 .hero-content h1{color:#fff;font-size:clamp(36px,5.5vw,64px);font-weight:900;line-height:1.1;letter-spacing:-1.5px;margin-bottom:20px}
 .hero-content h1 span{background:linear-gradient(135deg,#2dd4bf,#0d9488);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .hero-content p{color:rgba(255,255,255,.7);font-size:clamp(16px,2vw,20px);line-height:1.7;margin-bottom:36px;max-width:600px;margin-left:auto;margin-right:auto}
@@ -172,7 +170,6 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;color:#1e293b;overfl
         <div class="hero-gradient"></div>
     </div>
     <div class="hero-content">
-        <div class="hero-badge"><i class="fas fa-bolt"></i> Adama's #1 Rental Platform</div>
         <h1>Find Your Perfect <span>Rental Home</span> in Adama</h1>
         <p>The trusted digital marketplace connecting landlords and tenants across Adama City. Search, compare, and secure your next property.</p>
         <div class="hero-actions">

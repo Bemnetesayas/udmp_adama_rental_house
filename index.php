@@ -25,6 +25,96 @@ if(isset($_SESSION['user_id'])){
     $cq = mysqli_query($conn, "SELECT COUNT(*) c FROM notifications WHERE user_id=$uid AND is_read=0");
     if($cq) $unread_count = (int)mysqli_fetch_assoc($cq)['c'];
 }
+
+$LISTING_LIMIT = 8;
+
+function buildListingQuery($conn) {
+    $where = "houses.status IN ('Available', 'Rented') AND houses.is_approved = 1";
+    if(!empty($_GET['cat'])) {
+        $c = mysqli_real_escape_string($conn, $_GET['cat']);
+        $where .= " AND houses.category = '$c'";
+    }
+    if(!empty($_GET['kb'])) {
+        $k = mysqli_real_escape_string($conn, $_GET['kb']);
+        $where .= " AND houses.kebele LIKE '%$k%'";
+    }
+    if(!empty($_GET['max_pr'])) {
+        $max = (int)$_GET['max_pr'];
+        $where .= " AND houses.amount <= $max";
+    }
+    $sort = $_GET['sort'] ?? 'newest';
+    $order = ($sort == 'price_low') ? 'amount ASC' : (($sort == 'price_high') ? 'amount DESC' : 'created_at DESC');
+    return [
+        'where' => $where,
+        'sql'   => "SELECT houses.*, users.full_name FROM houses LEFT JOIN users ON houses.user_id = users.id WHERE $where ORDER BY $order"
+    ];
+}
+
+function renderPropertyCard($row, $all_amenities, $house_amenities) {
+    $status = $row['status'] ?? 'Available';
+    $badgeClass = ($status == 'Rented') ? 'badge-rented' : 'badge-available';
+?>
+                <div class="card" data-href="house_detail.php?house=<?php echo (int)$row['id']; ?>">
+                    <div class="card-img">
+                        <img src="uploads/<?php echo htmlspecialchars($row['image']); ?>" alt="Property" loading="lazy">
+                        <span class="card-badge <?php echo $badgeClass; ?>"><?php echo htmlspecialchars($status); ?></span>
+                        <span class="card-category"><?php echo htmlspecialchars($row['category']); ?></span>
+                    </div>
+                    <div class="card-body">
+                        <div class="card-price"><?php echo number_format($row['amount']); ?> <span>ETB/month</span></div>
+                        <div class="card-location">
+                            <i class="fas fa-location-dot"></i>
+                            Kebele <?php echo htmlspecialchars($row['kebele']); ?>, <?php echo htmlspecialchars($row['street']); ?>
+                        </div>
+                        <div class="card-desc"><?php echo nl2br(htmlspecialchars($row['description'])); ?></div>
+                        <?php if(!empty($house_amenities[$row['id']])): ?>
+                        <div class="card-amenities">
+                            <?php foreach($house_amenities[$row['id']] as $aid):
+                                if(!isset($all_amenities[$aid])) continue;
+                            ?>
+                                <span class="card-amenity" title="<?php echo htmlspecialchars($all_amenities[$aid]['name']); ?>"><i class="<?php echo htmlspecialchars($all_amenities[$aid]['icon']); ?>"></i> <?php echo htmlspecialchars($all_amenities[$aid]['name']); ?></span>
+                            <?php endforeach; ?>
+                        </div>
+                        <?php endif; ?>
+                        <div class="card-meta">
+                            <div class="card-owner"><i class="fas fa-user"></i> <?php echo htmlspecialchars($row['full_name'] ?? 'Private'); ?></div>
+                        </div>
+                    </div>
+                </div>
+<?php
+}
+
+function loadAmenities($conn) {
+    $all = [];
+    $res = mysqli_query($conn, "SELECT id, name, icon FROM amenities");
+    if($res) { while($r = mysqli_fetch_assoc($res)) $all[$r['id']] = $r; }
+    $map = [];
+    $res2 = mysqli_query($conn, "SELECT house_id, amenity_id FROM house_amenities");
+    if($res2) { while($r = mysqli_fetch_assoc($res2)) $map[$r['house_id']][] = $r['amenity_id']; }
+    return [$all, $map];
+}
+
+if(isset($_GET['ajax']) && $_GET['ajax'] == '1') {
+    header('Content-Type: text/html; charset=UTF-8');
+    $q = buildListingQuery($conn);
+    $offset = isset($_GET['offset']) ? max(0, (int)$_GET['offset']) : 0;
+    $limit = isset($_GET['limit']) ? min(50, max(1, (int)$_GET['limit'])) : $LISTING_LIMIT;
+    list($all_amenities, $house_amenities) = loadAmenities($conn);
+    $res = mysqli_query($conn, $q['sql'] . " LIMIT $limit OFFSET $offset");
+    $count = 0;
+    if($res && mysqli_num_rows($res) > 0) {
+        while($row = mysqli_fetch_assoc($res)) {
+            renderPropertyCard($row, $all_amenities, $house_amenities);
+            $count++;
+        }
+    }
+    header('X-Items-Count: ' . $count);
+    exit;
+}
+
+$q = buildListingQuery($conn);
+$total_filtered = (int)mysqli_fetch_row(mysqli_query($conn, "SELECT COUNT(*) FROM houses WHERE " . $q['where']))[0];
+list($all_amenities, $house_amenities) = loadAmenities($conn);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -120,7 +210,7 @@ if(isset($_SESSION['user_id'])){
 
         /* GRID */
         .listings{max-width:1200px;margin:0 auto;padding:24px 32px;flex:1}
-        .card-grid{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:auto;gap:20px}
+        .card-grid{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:auto;align-items:start;gap:20px}
         @media(max-width:1200px){.card-grid{grid-template-columns:repeat(3,1fr)}}
         @media(max-width:900px){.card-grid{grid-template-columns:repeat(2,1fr)}}
         @media(max-width:600px){.card-grid{grid-template-columns:1fr}}
@@ -148,6 +238,10 @@ if(isset($_SESSION['user_id'])){
         .empty-state i{font-size:48px;color:#d1d5db;margin-bottom:16px}
         .empty-state h3{font-size:18px;font-weight:700;color:#374151;margin-bottom:8px}
         .empty-state p{color:#64748b;font-size:14px}
+
+        .load-more-wrap{text-align:center;padding:40px 0}
+        .load-more-wrap[hidden]{display:none}
+        .load-more-spinner{font-size:24px;color:#0d9488}
 
         @media(max-width:768px){
             .navbar{padding:12px 16px}
@@ -233,12 +327,7 @@ if(isset($_SESSION['user_id'])){
             <div class="search-title">
                 <h1>Find Properties in Adama</h1>
                 <span class="count">
-                    <?php
-                    $count_sql = "SELECT COUNT(*) as c FROM houses WHERE status IN ('Available','Rented') AND is_approved = 1";
-                    $count_res = mysqli_query($conn, $count_sql);
-                    $total = $count_res ? mysqli_fetch_assoc($count_res)['c'] : 0;
-                    echo $total . ' listings';
-                    ?>
+                    <?php echo $total_filtered . ' listings'; ?>
                 </span>
             </div>
             <form method="GET" action="index.php" class="search-form">
@@ -269,85 +358,26 @@ if(isset($_SESSION['user_id'])){
     </div>
 
     <div class="listings">
-        <div class="card-grid">
+        <div class="card-grid" id="listingGrid">
             <?php
-            $sql = "SELECT houses.*, users.full_name FROM houses 
-                    LEFT JOIN users ON houses.user_id = users.id 
-                    WHERE houses.status IN ('Available', 'Rented') AND houses.is_approved = 1";
-
-            if(!empty($_GET['cat'])) {
-                $c = mysqli_real_escape_string($conn, $_GET['cat']);
-                $sql .= " AND category = '$c'"; 
-            }
-            if(!empty($_GET['kb'])) { 
-                $k = mysqli_real_escape_string($conn, $_GET['kb']); 
-                $sql .= " AND kebele LIKE '%$k%'"; 
-            }
-            if(!empty($_GET['max_pr'])) { 
-                $max = (int)$_GET['max_pr']; 
-                $sql .= " AND amount <= $max"; 
-            }
-
-            $sort = $_GET['sort'] ?? 'newest';
-            if($sort == 'price_low') $sql .= " ORDER BY amount ASC";
-            elseif($sort == 'price_high') $sql .= " ORDER BY amount DESC";
-            else $sql .= " ORDER BY created_at DESC";
-
-            $res = mysqli_query($conn, $sql);
-
-            $all_amenities = [];
-            $am_res = mysqli_query($conn, "SELECT id, name, icon FROM amenities");
-            if($am_res){
-                while($amenity = mysqli_fetch_assoc($am_res)){
-                    $all_amenities[$amenity['id']] = $amenity;
-                }
-            }
-            $house_amenities = [];
-            $ha_res = mysqli_query($conn, "SELECT house_id, amenity_id FROM house_amenities");
-            if($ha_res){
-                while($ha = mysqli_fetch_assoc($ha_res)){
-                    $house_amenities[$ha['house_id']][] = $ha['amenity_id'];
-                }
-            }
-
+            $offset = 0;
+            $res = mysqli_query($conn, $q['sql'] . " LIMIT $LISTING_LIMIT OFFSET $offset");
+            $rendered = 0;
             if($res && mysqli_num_rows($res) > 0) {
-                while($row = mysqli_fetch_assoc($res)) { 
-                    $status = $row['status'] ?? 'Available';
-                    $badgeClass = ($status == 'Rented') ? 'badge-rented' : 'badge-available'; 
-            ?> 
-                <div class="card" data-href="house_detail.php?house=<?php echo (int)$row['id']; ?>">
-                    <div class="card-img">
-                        <img src="uploads/<?php echo htmlspecialchars($row['image']); ?>" alt="Property" loading="lazy">
-                        <span class="card-badge <?php echo $badgeClass; ?>"><?php echo htmlspecialchars($status); ?></span>
-                        <span class="card-category"><?php echo htmlspecialchars($row['category']); ?></span>
-                    </div>
-                    <div class="card-body">
-                        <div class="card-price"><?php echo number_format($row['amount']); ?> <span>ETB/month</span></div>
-                        <div class="card-location">
-                            <i class="fas fa-location-dot"></i>
-                            Kebele <?php echo htmlspecialchars($row['kebele']); ?>, <?php echo htmlspecialchars($row['street']); ?>
-                        </div>
-                        <div class="card-desc"><?php echo nl2br(htmlspecialchars($row['description'])); ?></div>
-                        <?php if(!empty($house_amenities[$row['id']])): ?>
-                        <div class="card-amenities">
-                            <?php foreach($house_amenities[$row['id']] as $aid):
-                                if(!isset($all_amenities[$aid])) continue;
-                            ?>
-                                <span class="card-amenity" title="<?php echo htmlspecialchars($all_amenities[$aid]['name']); ?>"><i class="<?php echo htmlspecialchars($all_amenities[$aid]['icon']); ?>"></i> <?php echo htmlspecialchars($all_amenities[$aid]['name']); ?></span>
-                            <?php endforeach; ?>
-                        </div>
-                        <?php endif; ?>
-                        <div class="card-meta">
-                            <div class="card-owner"><i class="fas fa-user"></i> <?php echo htmlspecialchars($row['full_name'] ?? 'Private'); ?></div>
-                        </div>
-                    </div>
-                </div>
-            <?php 
-                } 
+                while($row = mysqli_fetch_assoc($res)) {
+                    renderPropertyCard($row, $all_amenities, $house_amenities);
+                    $rendered++;
+                }
             } else {
                 echo '<div class="empty-state"><i class="fas fa-home"></i><h3>No properties found</h3><p>Try adjusting your search filters or check back later.</p></div>';
             }
             ?>
+        </div>
+        <div id="loadMoreWrap" class="load-more-wrap" style="display:none">
+            <button id="loadMoreBtn" class="btn-search" style="padding:12px 32px">
+                <i class="fas fa-angle-down"></i> Load More
+            </button>
+            <i id="loadMoreSpinner" class="load-more-spinner fas fa-spinner fa-spin" style="display:none"></i>
         </div>
     </div>
 
@@ -379,6 +409,48 @@ if(isset($_SESSION['user_id'])){
             document.querySelectorAll('.notif-item.unread').forEach(function(i){ i.classList.remove('unread'); });
         });
     }
+
+    (function(){
+        var grid = document.getElementById('listingGrid');
+        var wrap = document.getElementById('loadMoreWrap');
+        var btn = document.getElementById('loadMoreBtn');
+        var spinner = document.getElementById('loadMoreSpinner');
+        if(!grid || !wrap || !btn) return;
+        var total = <?php echo (int)$total_filtered; ?>;
+        var limit = <?php echo (int)$LISTING_LIMIT; ?>;
+        var loaded = <?php echo (int)$rendered; ?>;
+        if(loaded >= total) return;
+        wrap.style.display = 'block';
+        var isLoading = false;
+        var params = new URLSearchParams(window.location.search);
+        btn.addEventListener('click', function(){
+            if(isLoading || loaded >= total) return;
+            isLoading = true;
+            btn.style.display = 'none';
+            spinner.style.display = 'inline-block';
+            params.set('ajax', '1');
+            params.set('offset', loaded);
+            params.set('limit', limit);
+            fetch('index.php?' + params.toString(), {headers: {'X-Requested-With': 'XMLHttpRequest'}})
+                .then(function(res){ return res.text(); })
+                .then(function(html){
+                    grid.insertAdjacentHTML('beforeend', html);
+                    loaded = parseInt(grid.querySelectorAll('.card').length, 10);
+                    isLoading = false;
+                    spinner.style.display = 'none';
+                    if(loaded >= total){
+                        wrap.style.display = 'none';
+                    } else {
+                        btn.style.display = 'inline-block';
+                    }
+                })
+                .catch(function(){
+                    isLoading = false;
+                    spinner.style.display = 'none';
+                    btn.style.display = 'inline-block';
+                });
+        });
+    })();
     </script>
 
     <?php include('footer.php'); ?>
