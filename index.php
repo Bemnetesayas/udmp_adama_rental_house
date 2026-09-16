@@ -239,6 +239,10 @@ list($all_amenities, $house_amenities) = loadAmenities($conn);
         .empty-state h3{font-size:18px;font-weight:700;color:#374151;margin-bottom:8px}
         .empty-state p{color:#64748b;font-size:14px}
 
+        .load-more-wrap{text-align:center;padding:40px 0}
+        .load-more-wrap[hidden]{display:none}
+        .load-more-spinner{font-size:24px;color:#0d9488}
+
         @media(max-width:768px){
             .navbar{padding:12px 16px}
             .search-section{padding:16px}
@@ -369,11 +373,11 @@ list($all_amenities, $house_amenities) = loadAmenities($conn);
             }
             ?>
         </div>
-        <div id="loadMoreWrap" style="text-align:center;padding:40px 0;display:none">
+        <div id="loadMoreWrap" class="load-more-wrap" style="display:none">
             <button id="loadMoreBtn" class="btn-search" style="padding:12px 32px">
                 <i class="fas fa-angle-down"></i> Load More
             </button>
-            <i hidden id="loadMoreSpinner" class="fas fa-spinner fa-spin" style="font-size:24px;color:#0d9488"></i>
+            <i id="loadMoreSpinner" class="load-more-spinner fas fa-spinner fa-spin" style="display:none"></i>
         </div>
     </div>
 
