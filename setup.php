@@ -1,8 +1,11 @@
 <?php
 error_reporting(E_ALL & ~E_NOTICE & ~E_WARNING);
 ini_set('display_errors', 0);
-if (file_exists(__DIR__ . '/../config/config_secrets.php')) {
-    require_once __DIR__ . '/../config/config_secrets.php';
+// Old mysqli behaviour: return false on error instead of throwing exceptions
+// (shared hosts like InfinityFree deny CREATE DATABASE, which would otherwise abort setup).
+mysqli_report(MYSQLI_REPORT_OFF);
+if (file_exists(__DIR__ . '/config/config_secrets.php')) {
+    require_once __DIR__ . '/config/config_secrets.php';
 }
 $host   = defined('DB_HOST') ? DB_HOST : "localhost";
 $user   = defined('DB_USER') ? DB_USER : "root";
@@ -13,8 +16,12 @@ $conn = @mysqli_connect($host, $user, $pass);
 if (!$conn) {
     $fatal = "Cannot connect to MySQL. Check XAMPP/MySQL is running and the credentials in db.php.";
 } else {
-    mysqli_query($conn, "CREATE DATABASE IF NOT EXISTS $dbname");
-    mysqli_select_db($conn, $dbname);
+    // Shared hosts (InfinityFree) pre-create the DB and deny CREATE DATABASE,
+    // so select it first and only attempt creation if selection fails.
+    if (!mysqli_select_db($conn, $dbname)) {
+        @mysqli_query($conn, "CREATE DATABASE IF NOT EXISTS `$dbname`");
+        mysqli_select_db($conn, $dbname);
+    }
 
     mysqli_query($conn, "CREATE TABLE IF NOT EXISTS users (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -123,7 +130,8 @@ if (!$conn) {
         INDEX idx_user_read (user_id, is_read)
     )");
 
-    $amenity_count = mysqli_fetch_row(mysqli_query($conn, "SELECT COUNT(*) FROM amenities"))[0];
+    $amenity_res = mysqli_query($conn, "SELECT COUNT(*) FROM amenities");
+    $amenity_count = $amenity_res ? (int)mysqli_fetch_row($amenity_res)[0] : 0;
     if ($amenity_count == 0) {
         $amenities = [
             ['Water Supply', 'fas fa-droplet', 1],
@@ -149,7 +157,8 @@ if (!$conn) {
         }
     }
 
-    $total_users = (int)mysqli_fetch_row(mysqli_query($conn, "SELECT COUNT(*) FROM users"))[0];
+    $users_res = mysqli_query($conn, "SELECT COUNT(*) FROM users");
+    $total_users = $users_res ? (int)mysqli_fetch_row($users_res)[0] : 0;
 
     if ($total_users > 0) {
         // App is already in use — NEVER regenerate or display the admin setup key.
