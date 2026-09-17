@@ -1,8 +1,11 @@
 <?php
-include('session_config.php');
+include('includes/session_config.php');
 session_start();
-include('db.php');
-include('mail_helper.php');
+include('includes/db.php');
+include('includes/mail_helper.php');
+include('includes/security.php');
+
+if (!empty($_POST)) csrf_validate();
 
 $email = trim($_POST['email'] ?? '');
 if ($email === '' && isset($_SESSION['verify_pending_email'])) {

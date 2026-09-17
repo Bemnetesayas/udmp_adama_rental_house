@@ -1,7 +1,9 @@
 ﻿<?php 
-include('session_config.php');
+include('includes/session_config.php');
 session_start();
-include('db.php'); 
+include('includes/db.php');
+include('includes/security.php');
+if(!isset($_SESSION['csrf_token'])) csrf_token(); 
 
 header("Cache-Control: no-cache, no-store, must-revalidate"); 
 header("Pragma: no-cache"); 
@@ -336,10 +338,10 @@ $house_images = loadHouseImages($conn);
                     </div>
                 </div>
                 <div class="user-avatar-wrap">
-                    <div class="user-avatar"><?php echo strtoupper(substr($_SESSION['user_name'] ?? 'U', 0, 1)); ?></div>
+                    <div class="user-avatar"><?php echo htmlspecialchars(strtoupper(substr($_SESSION['user_name'] ?? 'U', 0, 1))); ?></div>
                     <div class="user-dropdown">
                         <div class="user-dropdown-header">
-                            <div class="user-avatar-sm"><?php echo strtoupper(substr($_SESSION['user_name'] ?? 'U', 0, 1)); ?></div>
+                            <div class="user-avatar-sm"><?php echo htmlspecialchars(strtoupper(substr($_SESSION['user_name'] ?? 'U', 0, 1))); ?></div>
                             <div><div class="user-dropdown-name"><?php echo htmlspecialchars($_SESSION['user_name'] ?? 'User'); ?></div>
                             <div class="user-dropdown-role"><?php echo isset($_SESSION['is_admin']) && $_SESSION['is_admin'] >= 1 ? 'Admin' : 'Landlord'; ?></div></div>
                         </div>
@@ -479,7 +481,9 @@ $house_images = loadHouseImages($conn);
     });
 
     function markAllRead(){
-        fetch('mark_notifications_read.php', {method: 'POST'}).then(function(){
+        var body = new FormData();
+        body.append('csrf_token', <?php echo json_encode($_SESSION['csrf_token']); ?>);
+        fetch('mark_notifications_read.php', {method: 'POST', body: body}).then(function(){
             var badge = document.getElementById('bellBadge');
             if(badge) badge.remove();
             var count = document.getElementById('notifCount');
@@ -531,7 +535,7 @@ $house_images = loadHouseImages($conn);
     })();
     </script>
 
-    <?php include('footer.php'); ?>
+    <?php include('includes/footer.php'); ?>
 
     <div class="lb-overlay" id="lbOverlay">
         <button class="lb-close" id="lbClose" aria-label="Close"><i class="fas fa-xmark"></i></button>

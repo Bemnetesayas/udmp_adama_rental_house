@@ -1,7 +1,8 @@
 <?php
-include('session_config.php');
+include('includes/session_config.php');
 session_start();
-include('db.php');
+include('includes/db.php');
+include('includes/security.php');
 
 // Only super admin can invite
 if(!isset($_SESSION['is_admin']) || $_SESSION['is_admin'] < 2){
@@ -14,6 +15,7 @@ $error = '';
 $generated_key = '';
 
 if($_SERVER['REQUEST_METHOD'] == 'POST'){
+    csrf_validate();
     $action = $_POST['action'] ?? '';
 
     if($action == 'generate'){
@@ -64,7 +66,7 @@ $invites = mysqli_query($conn, "SELECT ai.*, u.full_name, u.is_admin FROM admin_
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Invite Admin - AdamaRent</title>
-    <?php include(__DIR__ . '/header.php'); ?>
+    <?php include(__DIR__ . '/includes/header.php'); ?>
 </head>
 <body>
 <div class="content">
@@ -94,6 +96,7 @@ $invites = mysqli_query($conn, "SELECT ai.*, u.full_name, u.is_admin FROM admin_
         <h3>Generate Admin Invite</h3>
         <div class="desc">Enter the email of a registered landlord. They will be invited to become an admin.</div>
         <form method="POST">
+            <?php echo csrf_field(); ?>
             <label>Landlord's Email Address</label>
             <input type="email" name="email" placeholder="landlord@example.com" required>
             <button type="submit" name="action" value="generate" class="btn btn-primary"><i class="fas fa-envelope"></i> Generate Invite Key</button>
@@ -126,6 +129,7 @@ $invites = mysqli_query($conn, "SELECT ai.*, u.full_name, u.is_admin FROM admin_
                     <td>
                         <?php if($st == 'pending'): ?>
                         <form method="POST" style="display:inline">
+                            <?php echo csrf_field(); ?>
                             <input type="hidden" name="action" value="revoke">
                             <input type="hidden" name="invite_id" value="<?php echo (int)$inv['id']; ?>">
                             <button type="submit" class="btn btn-sm btn-danger-ghost">Revoke</button>

@@ -1,19 +1,22 @@
 <?php 
-include('session_config.php');
+include('includes/session_config.php');
 session_start();
-include('db.php');
-include('mail_helper.php');
+include('includes/db.php');
+include('includes/mail_helper.php');
+include('includes/security.php');
 
 $verification_warning = false;
 $verification_email = '';
 
 if(isset($_POST['login'])){
+    csrf_validate();
     $email = mysqli_real_escape_string($conn, $_POST['email']);
     $pass = $_POST['password'];
 
     $res = mysqli_query($conn, "SELECT * FROM users WHERE email='$email'");
     if($res && ($user = mysqli_fetch_assoc($res))){
         if(password_verify($pass, $user['password'])){
+            session_regenerate_id(true);
             // Email verification gate
             if((int)$user['email_verified'] === 0){
                 $_SESSION['verify_pending_email'] = $user['email'];
@@ -156,6 +159,7 @@ if(isset($_GET['google'])){
             <?php endif; ?>
 
             <form method="POST">
+                <?php echo csrf_field(); ?>
                 <div class="form-group">
                     <label>Email Address</label>
                     <div class="input-wrapper">

@@ -1,15 +1,22 @@
 <?php
-include('session_config.php');
+include('includes/session_config.php');
 session_start();
-include('db.php');
+include('includes/db.php');
+include('includes/security.php');
 
 if(!isset($_SESSION['is_admin']) || $_SESSION['is_admin'] < 1){
     header("Location: login.php");
     exit();
 }
 
-$action = $_GET['action'] ?? '';
-$id = (int)($_GET['id'] ?? 0);
+if(empty($_POST['action'])){
+    header("Location: admin_manage_requests.php");
+    exit();
+}
+csrf_validate();
+
+$action = $_POST['action'];
+$id = (int)($_POST['id'] ?? 0);
 
 function notifyOwner($conn, $house_id, $title, $message){
     $owner = mysqli_fetch_assoc(mysqli_query($conn, "SELECT user_id, kebele FROM houses WHERE id=$house_id"));

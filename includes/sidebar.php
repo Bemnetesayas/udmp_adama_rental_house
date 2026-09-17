@@ -1,5 +1,5 @@
 <?php
-if (session_status() !== PHP_SESSION_ACTIVE) { include('session_config.php'); @session_start(); }
+if (session_status() !== PHP_SESSION_ACTIVE) { include(__DIR__ . '/session_config.php'); @session_start(); }
 if(!isset($current_page)) $current_page = basename($_SERVER['PHP_SELF']);
 ?>
 <style>

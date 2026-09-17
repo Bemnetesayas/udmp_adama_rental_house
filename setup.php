@@ -1,10 +1,13 @@
 <?php
 error_reporting(E_ALL & ~E_NOTICE & ~E_WARNING);
 ini_set('display_errors', 0);
-$host = "localhost";
-$user = "root";
-$pass = "";
-$dbname = "rental_db";
+if (file_exists(__DIR__ . '/../config/config_secrets.php')) {
+    require_once __DIR__ . '/../config/config_secrets.php';
+}
+$host   = defined('DB_HOST') ? DB_HOST : "localhost";
+$user   = defined('DB_USER') ? DB_USER : "root";
+$pass   = defined('DB_PASS') ? DB_PASS : "";
+$dbname = defined('DB_NAME') ? DB_NAME : "rental_db";
 
 $conn = @mysqli_connect($host, $user, $pass);
 if (!$conn) {
@@ -146,25 +149,22 @@ if (!$conn) {
         }
     }
 
-    $admin_count = mysqli_fetch_row(mysqli_query($conn, "SELECT COUNT(*) FROM users WHERE is_admin >= 1"))[0];
+    $total_users = (int)mysqli_fetch_row(mysqli_query($conn, "SELECT COUNT(*) FROM users"))[0];
 
-    if ($admin_count == 0) {
-        $row = mysqli_fetch_assoc(mysqli_query($conn, "SELECT config_value FROM app_config WHERE config_key='admin_setup_key'"));
-        if ($row && !empty($row['config_value'])) {
-            $key = $row['config_value'];
-        } else {
-            $key = bin2hex(random_bytes(16));
-            $safe = mysqli_real_escape_string($conn, $key);
-            mysqli_query($conn, "INSERT INTO app_config (config_key, config_value) VALUES ('admin_setup_key', '$safe')");
-        }
+    if ($total_users > 0) {
+        // App is already in use — NEVER regenerate or display the admin setup key.
+        mysqli_query($conn, "DELETE FROM app_config WHERE config_key='admin_setup_key'");
+        $fatal = "Setup has already been completed (this database is in use). "
+               . "Delete <b>setup.php</b> from the server. "
+               . "If you need another admin, sign in and use the admin invite flow.";
+    } else {
+        $key = bin2hex(random_bytes(16));
+        $safe = mysqli_real_escape_string($conn, $key);
+        mysqli_query($conn, "INSERT INTO app_config (config_key, config_value) VALUES ('admin_setup_key', '$safe')");
         $msg = "Database installed successfully. No admin exists yet.";
         $msg .= "<br>Register an account at <b>register.php</b> with the admin setup key";
         $msg .= " (below) and that account becomes the admin.";
         $stage = "setup-key";
-    } else {
-        mysqli_query($conn, "DELETE FROM app_config WHERE config_key='admin_setup_key'");
-        $msg = "Database is ready. An admin account already exists — log in via login.php.";
-        $stage = "done";
     }
 
     @mkdir(__DIR__ . '/uploads', 0777, true);
