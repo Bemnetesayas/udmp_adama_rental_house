@@ -8,6 +8,15 @@
 // Leave EMPTY to auto-detect (fine when registering + verifying on the SAME machine).
 define('APP_BASE_URL', '');
 
+// MySQL database credentials (db.php reads these).
+// LOCAL XAMPP defaults: host localhost, user root, password empty, db rental_db.
+// On INFINITYFREE use the values shown in your control panel (Databases > MySQL),
+// e.g. host sql303.infinityfree.com, user if0_12345678, db if0_12345678_rental_db.
+define('DB_HOST', 'localhost');
+define('DB_USER', 'root');
+define('DB_PASS', '');
+define('DB_NAME', 'rental_db');
+
 // Brevo (Sendinblue) transactional API v3
 define('BREVO_API_KEY', '');                // "xkeysib-..." API v3 key
 define('BREVO_FROM_EMAIL', '');             // verified sender address, e.g. noreply@yourdomain.com

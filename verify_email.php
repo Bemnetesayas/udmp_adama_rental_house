@@ -1,5 +1,5 @@
 <?php
-include('db.php');
+include('includes/db.php');
 
 $status = 'invalid';
 if (isset($_GET['token']) && $_GET['token'] !== '') {

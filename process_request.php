@@ -1,12 +1,14 @@
 <?php
-include('session_config.php');
+include('includes/session_config.php');
 session_start();
-include('db.php');
+include('includes/db.php');
+include('includes/security.php');
 
 // Security check[cite: 5]
-if(!isset($_SESSION['is_admin']) || $_SESSION['is_admin'] != 2) die("Denied");
+if(!isset($_SESSION['is_admin']) || $_SESSION['is_admin'] < 2) die("Denied");
 
 if($_SERVER['REQUEST_METHOD'] == 'POST'){
+    csrf_validate();
     $id = (int)$_POST['id'];
     $action = $_POST['action'];
 

@@ -1,0 +1,22 @@
+# Block direct execution of any script inside uploads/ (stored-XSS/RCE guard).
+RemoveHandler .php .phtml .php3 .php4 .php5 .php7 .phps .cgi .pl .py .sh
+RemoveType .php .phtml .php3 .php4 .php5 .php7 .phps .cgi .pl .py .sh
+Options -Indexes
+<IfModule mod_authz_core.c>
+    <FilesMatch "\.(php|phtml|php3|php4|php5|php7|phps|cgi|pl|py|sh|htaccess)$">
+        Require all denied
+    </FilesMatch>
+    <Files "mail_log.txt">
+        Require all denied
+    </Files>
+</IfModule>
+<IfModule !mod_authz_core.c>
+    <FilesMatch "\.(php|phtml|php3|php4|php5|php7|phps|cgi|pl|py|sh|htaccess)$">
+        Order allow,deny
+        Deny from all
+    </FilesMatch>
+    <Files "mail_log.txt">
+        Order allow,deny
+        Deny from all
+    </Files>
+</IfModule>

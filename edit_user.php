@@ -1,7 +1,8 @@
 <?php
-include('session_config.php');
+include('includes/session_config.php');
 session_start();
-include('db.php');
+include('includes/db.php');
+include('includes/security.php');
 
 if(!isset($_SESSION['is_admin']) || $_SESSION['is_admin'] < 1){
     die('Access Denied');
@@ -11,6 +12,7 @@ $my_level = (int)($_SESSION['is_admin'] ?? 0);
 $my_id = (int)($_SESSION['user_id'] ?? 0);
 
 if($_SERVER['REQUEST_METHOD'] === 'POST'){
+    csrf_validate();
     $target_id = (int)$_POST['user_id'];
     $full_name = mysqli_real_escape_string($conn, trim($_POST['full_name'] ?? ''));
     $email = mysqli_real_escape_string($conn, trim($_POST['email'] ?? ''));
@@ -40,7 +42,7 @@ $user = mysqli_fetch_assoc($res);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit User - AdamaRent Admin</title>
-    <?php include(__DIR__ . '/header.php'); ?>
+    <?php include(__DIR__ . '/includes/header.php'); ?>
 </head>
 <body>
     <div class="content">
@@ -55,6 +57,7 @@ $user = mysqli_fetch_assoc($res);
         </div>
         <div class="form-card">
             <form method="POST">
+                <?php echo csrf_field(); ?>
                 <input type="hidden" name="user_id" value="<?php echo (int)$user['id']; ?>">
                 <div class="form-group">
                     <label>Full Name</label>

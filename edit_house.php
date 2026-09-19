@@ -1,7 +1,8 @@
 <?php 
-include('session_config.php');
+include('includes/session_config.php');
 session_start();
-include('db.php');
+include('includes/db.php');
+include('includes/security.php');
 
 if(!isset($_SESSION['user_id'])){
     header("Location: login.php");
@@ -19,6 +20,7 @@ if(!$data){
 }
 
 if(isset($_POST['update'])){
+    csrf_validate();
     $kebele = mysqli_real_escape_string($conn, $_POST['kebele']);
     $amount = (int)$_POST['amount'];
     $phone = mysqli_real_escape_string($conn, $_POST['phone']);
@@ -26,8 +28,16 @@ if(isset($_POST['update'])){
 
     $imgName = $data['image']; 
     if(!empty($_FILES['house_image']['name'])){
-        $imgName = time() . "_" . $_FILES['house_image']['name'];
-        move_uploaded_file($_FILES['house_image']['tmp_name'], "uploads/" . $imgName);
+        $allowed = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+        $ext = strtolower(pathinfo($_FILES['house_image']['name'], PATHINFO_EXTENSION));
+        if(!in_array($ext, $allowed, true) || $_FILES['house_image']['error'] !== UPLOAD_ERR_OK){
+            $update_error = true;
+        } else {
+            $imgName = time() . '_' . bin2hex(random_bytes(6)) . '.' . $ext;
+            if(!move_uploaded_file($_FILES['house_image']['tmp_name'], "uploads/" . $imgName)){
+                $update_error = true;
+            }
+        }
     }
 
     $update_sql = "UPDATE houses SET kebele='$kebele', amount='$amount', phone='$phone', description='$desc', image='$imgName' 
@@ -52,7 +62,7 @@ if(!empty($updated)):
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 </head>
 <body style="margin:0;background:#f8fafc;font-family:'Inter',sans-serif">
-    <?php include(__DIR__ . '/popup.php'); ?>
+    <?php include(__DIR__ . '/includes/popup.php'); ?>
     <script>
         window.addEventListener('DOMContentLoaded', function(){
             showToast("Listing updated successfully!", "success", "Changes saved");
@@ -133,10 +143,10 @@ endif;
             <a href="index.php"><i class="fas fa-search"></i> Browse</a>
             <a href="manage_houses.php"><i class="fas fa-th-large"></i> Dashboard</a>
             <div class="user-avatar-wrap">
-                <div class="user-avatar"><?php echo strtoupper(substr($_SESSION['user_name'] ?? 'U', 0, 1)); ?></div>
+                <div class="user-avatar"><?php echo htmlspecialchars(strtoupper(substr($_SESSION['user_name'] ?? 'U', 0, 1))); ?></div>
                 <div class="user-dropdown">
                     <div class="user-dropdown-header">
-                        <div class="user-avatar-sm"><?php echo strtoupper(substr($_SESSION['user_name'] ?? 'U', 0, 1)); ?></div>
+                        <div class="user-avatar-sm"><?php echo htmlspecialchars(strtoupper(substr($_SESSION['user_name'] ?? 'U', 0, 1))); ?></div>
                         <div><div class="user-dropdown-name"><?php echo htmlspecialchars($_SESSION['user_name'] ?? 'User'); ?></div>
                         <div class="user-dropdown-role"><?php echo isset($_SESSION['is_admin']) && $_SESSION['is_admin'] >= 1 ? 'Admin' : 'Landlord'; ?></div></div>
                     </div>
@@ -155,6 +165,7 @@ endif;
         </div>
         <div class="form-card">
             <form method="POST" enctype="multipart/form-data">
+                <?php echo csrf_field(); ?>
                 <div class="form-group">
                     <label>Kebele</label>
                     <input type="text" name="kebele" value="<?php echo htmlspecialchars($data['kebele']); ?>" required>
@@ -187,7 +198,7 @@ endif;
         </div>
     </div>
 
-    <?php include(__DIR__ . '/popup.php'); ?>
+    <?php include(__DIR__ . '/includes/popup.php'); ?>
     <?php if(isset($update_error)): ?>
         <script>window.addEventListener('DOMContentLoaded', function(){ showToast("Database error. Your changes were not saved.", "error", "Update failed"); });</script>
     <?php endif; ?>
