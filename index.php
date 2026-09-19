@@ -294,6 +294,7 @@ $house_images = loadHouseImages($conn);
     </style>
 </head>
 <body>
+    <?php include(__DIR__ . '/pending_invite_notice.php'); ?>
     <nav class="navbar">
         <a href="Home.php" class="nav-brand">
             <div class="nav-brand-icon">AR</div>
@@ -414,6 +415,13 @@ $house_images = loadHouseImages($conn);
             </button>
             <i id="loadMoreSpinner" class="load-more-spinner fas fa-spinner fa-spin" style="display:none"></i>
         </div>
+    </div>
+
+    <div class="lb-overlay" id="lbOverlay">
+        <button class="lb-close" id="lbClose" aria-label="Close"><i class="fas fa-xmark"></i></button>
+        <button class="lb-nav lb-prev" id="lbPrev" aria-label="Previous"><i class="fas fa-chevron-left"></i></button>
+        <img id="lbImg" src="" alt="Property photo">
+        <button class="lb-nav lb-next" id="lbNext" aria-label="Next"><i class="fas fa-chevron-right"></i></button>
     </div>
 
     <script>
@@ -545,12 +553,5 @@ $house_images = loadHouseImages($conn);
     </script>
 
     <?php include('includes/footer.php'); ?>
-
-    <div class="lb-overlay" id="lbOverlay">
-        <button class="lb-close" id="lbClose" aria-label="Close"><i class="fas fa-xmark"></i></button>
-        <button class="lb-nav lb-prev" id="lbPrev" aria-label="Previous"><i class="fas fa-chevron-left"></i></button>
-        <img id="lbImg" src="" alt="Property photo">
-        <button class="lb-nav lb-next" id="lbNext" aria-label="Next"><i class="fas fa-chevron-right"></i></button>
-    </div>
 </body>
 </html>

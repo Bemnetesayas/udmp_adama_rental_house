@@ -11,6 +11,21 @@ if(!isset($_SESSION['is_admin']) || $_SESSION['is_admin'] < 1){
 
 $requests = mysqli_query($conn, "SELECT * FROM requests WHERE status = 0 ORDER BY created_at DESC");
 
+function get_house_images($conn, $house_id){
+    $house_id = (int)$house_id;
+    $imgs = [];
+    $fr = mysqli_query($conn, "SELECT image FROM houses WHERE id=$house_id AND image IS NOT NULL AND image <> ''");
+    if($fr && ($f = mysqli_fetch_row($fr))) $imgs[] = $f[0];
+    $gi = mysqli_query($conn, "SELECT filename FROM house_images WHERE house_id=$house_id ORDER BY sort_order ASC, id ASC");
+    if($gi){ while($g = mysqli_fetch_assoc($gi)) $imgs[] = $g['filename']; }
+    return array_values(array_unique($imgs));
+}
+
+function first_house_image($conn, $house){
+    $photos = get_house_images($conn, $house['id']);
+    return !empty($photos) ? $photos[0] : '';
+}
+
 $flash = [
     'approved' => ['Request approved.', 'green'],
     'rejected' => ['Request rejected.', 'red'],
@@ -52,9 +67,10 @@ $msg = isset($_GET['msg'], $flash[$_GET['msg']]) ? $flash[$_GET['msg']] : null;
             $house = $house_res ? mysqli_fetch_assoc($house_res) : null;
         ?>
             <div class="request-card">
+                <?php $thumb = first_house_image($conn, $house); ?>
                 <div class="req-img">
-                    <?php if(!empty($house['image'])): ?>
-                        <img src="uploads/<?php echo htmlspecialchars($house['image']); ?>" alt="Property">
+                    <?php if(!empty($thumb)): ?>
+                        <img src="uploads/<?php echo htmlspecialchars($thumb); ?>" alt="Property">
                     <?php else: ?>
                         <div class="no-img"><i class="fas fa-image"></i> No Image</div>
                     <?php endif; ?>
@@ -73,18 +89,7 @@ $msg = isset($_GET['msg'], $flash[$_GET['msg']]) ? $flash[$_GET['msg']] : null;
                     </div>
                 </div>
                 <div class="req-actions">
-                    <form action="admin_actions.php" method="POST" style="display:inline">
-                        <?php echo csrf_field(); ?>
-                        <input type="hidden" name="action" value="approve">
-                        <input type="hidden" name="id" value="<?php echo (int)$req['id']; ?>">
-                        <button type="submit" class="btn btn-success"><i class="fas fa-check"></i> Approve</button>
-                    </form>
-                    <form action="admin_actions.php" method="POST" style="display:inline">
-                        <?php echo csrf_field(); ?>
-                        <input type="hidden" name="action" value="reject">
-                        <input type="hidden" name="id" value="<?php echo (int)$req['id']; ?>">
-                        <button type="submit" class="btn btn-danger-ghost"><i class="fas fa-times"></i> Reject</button>
-                    </form>
+                    <a href="admin_review_house.php?id=<?php echo $house['id']; ?>" class="btn" style="background:#0d9488;color:#fff;justify-content:center;border:none"><i class="fas fa-search"></i> Review</a>
                 </div>
             </div>
         <?php endwhile; ?>
@@ -103,9 +108,10 @@ $msg = isset($_GET['msg'], $flash[$_GET['msg']]) ? $flash[$_GET['msg']] : null;
         <div class="section-title"><i class="fas fa-clock"></i> Pending Listings (without request record)</div>
         <?php while($house = mysqli_fetch_assoc($pending_res)): ?>
             <div class="request-card">
+                <?php $thumb = first_house_image($conn, $house); ?>
                 <div class="req-img">
-                    <?php if(!empty($house['image'])): ?>
-                        <img src="uploads/<?php echo htmlspecialchars($house['image']); ?>" alt="Property">
+                    <?php if(!empty($thumb)): ?>
+                        <img src="uploads/<?php echo htmlspecialchars($thumb); ?>" alt="Property">
                     <?php else: ?>
                         <div class="no-img"><i class="fas fa-image"></i> No Image</div>
                     <?php endif; ?>
@@ -123,18 +129,7 @@ $msg = isset($_GET['msg'], $flash[$_GET['msg']]) ? $flash[$_GET['msg']] : null;
                     </div>
                 </div>
                 <div class="req-actions">
-                    <form action="admin_actions.php" method="POST" style="display:inline">
-                        <?php echo csrf_field(); ?>
-                        <input type="hidden" name="action" value="approve_house">
-                        <input type="hidden" name="id" value="<?php echo (int)$house['id']; ?>">
-                        <button type="submit" class="btn btn-success"><i class="fas fa-check"></i> Approve</button>
-                    </form>
-                    <form action="admin_actions.php" method="POST" style="display:inline">
-                        <?php echo csrf_field(); ?>
-                        <input type="hidden" name="action" value="reject_house">
-                        <input type="hidden" name="id" value="<?php echo (int)$house['id']; ?>">
-                        <button type="submit" class="btn btn-danger-ghost"><i class="fas fa-times"></i> Reject</button>
-                    </form>
+                    <a href="admin_review_house.php?id=<?php echo $house['id']; ?>" class="btn" style="background:#0d9488;color:#fff;justify-content:center;border:none"><i class="fas fa-search"></i> Review</a>
                 </div>
             </div>
         <?php endwhile; ?>
