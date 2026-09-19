@@ -134,10 +134,12 @@ if(isset($_POST['update'])){
         if(!$error){
             $img_safe = mysqli_real_escape_string($conn, $imgName);
             $update_sql = "UPDATE houses SET kebele='$kebele', street='$street', house_number='$h_num', category='$category',
-                           amount=$amount, phone='$phone', map_link='$map', description='$desc', image='$img_safe'
+                           amount=$amount, phone='$phone', map_link='$map', description='$desc', image='$img_safe',
+                           status='Pending', is_approved=0
                            WHERE id=$house_id AND user_id=$user_id";
 
             if(mysqli_query($conn, $update_sql)){
+                mysqli_query($conn, "INSERT INTO requests (user_id, house_id, status, created_at) VALUES ($user_id, $house_id, 0, NOW())");
                 if($imgName !== $data['image'] && !empty($data['image'])){
                     @unlink($upload_dir . '/' . basename($data['image']));
                 }
@@ -583,7 +585,7 @@ if(isset($_POST['update'])){
         <div class="ph-card">
             <div class="ph-icon"><i class="fas fa-check"></i></div>
             <h2>Changes Saved</h2>
-            <p>Your property details have been updated successfully.</p>
+            <p>Your changes have been submitted and will be reviewed by an admin. The listing will go live again once approved.</p>
             <div class="ph-actions">
                 <a href="edit_house.php?id=<?php echo (int)$house_id; ?>" class="ph-btn ph-btn-ghost"><i class="fas fa-pen"></i> Keep Editing</a>
                 <a href="manage_houses.php" class="ph-btn ph-btn-primary"><i class="fas fa-th-large"></i> Go to Dashboard</a>
