@@ -53,6 +53,20 @@ switch($action){
         header("Location: admin_manage_requests.php?msg=rejected");
         break;
 
+    case 'approve_review':
+        mysqli_query($conn, "UPDATE houses SET status='Available', is_approved=1 WHERE id=$id");
+        mysqli_query($conn, "UPDATE requests SET status=1 WHERE house_id=$id AND status=0");
+        notifyOwner($conn, $id, 'Listing approved', 'Your listing was approved and is now live on the marketplace.');
+        header("Location: admin_manage_requests.php?msg=approved");
+        break;
+
+    case 'reject_review':
+        mysqli_query($conn, "UPDATE houses SET status='Rejected', is_approved=0 WHERE id=$id");
+        mysqli_query($conn, "UPDATE requests SET status=2 WHERE house_id=$id AND status=0");
+        notifyOwner($conn, $id, 'Listing rejected', 'Your listing was rejected. Please review and resubmit.');
+        header("Location: admin_manage_requests.php?msg=rejected");
+        break;
+
     default:
         header("Location: admin_manage_requests.php");
 }
