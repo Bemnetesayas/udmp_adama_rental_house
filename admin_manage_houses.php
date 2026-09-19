@@ -106,9 +106,8 @@ $result = mysqli_query($conn, $sql);
             </tbody>
         </table>
     </div>
-</div>
 
-<div id="viewModal" class="modal">
+    <div id="viewModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
             <h3>Property Details</h3>
