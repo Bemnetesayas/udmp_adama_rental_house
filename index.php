@@ -1,7 +1,9 @@
 ﻿<?php 
-include('session_config.php');
+include('includes/session_config.php');
 session_start();
-include('db.php'); 
+include('includes/db.php');
+include('includes/security.php');
+if(!isset($_SESSION['csrf_token'])) csrf_token(); 
 
 header("Cache-Control: no-cache, no-store, must-revalidate"); 
 header("Pragma: no-cache"); 
@@ -170,7 +172,7 @@ $house_images = loadHouseImages($conn);
         .user-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#0d9488,#14b8a6);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;cursor:pointer;border:2px solid rgba(255,255,255,.2);transition:all .2s}
         .user-avatar:hover{border-color:rgba(255,255,255,.5);transform:scale(1.05)}
         .user-dropdown{position:absolute;top:calc(100% + 8px);right:0;width:220px;background:#1e293b;border-radius:12px;border:1px solid rgba(255,255,255,.1);box-shadow:0 20px 40px rgba(0,0,0,.3);opacity:0;visibility:hidden;transform:translateY(-8px);transition:opacity .3s cubic-bezier(.34,1.56,.64,1),transform .3s cubic-bezier(.34,1.56,.64,1),visibility .3s;z-index:1001}
-        .user-avatar-wrap:hover .user-dropdown{opacity:1;visibility:visible;transform:translateY(0)}
+        .user-avatar-wrap.open .user-dropdown{opacity:1;visibility:visible;transform:translateY(0)}
         .user-dropdown-header{padding:16px;display:flex;align-items:center;gap:10px}
         .user-avatar-sm{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#0d9488,#14b8a6);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0}
         .user-dropdown-name{color:#f1f5f9;font-size:13px;font-weight:600}
@@ -337,10 +339,10 @@ $house_images = loadHouseImages($conn);
                     </div>
                 </div>
                 <div class="user-avatar-wrap">
-                    <div class="user-avatar"><?php echo strtoupper(substr($_SESSION['user_name'] ?? 'U', 0, 1)); ?></div>
+                    <div class="user-avatar" onclick="toggleUserMenu(this)" aria-label="Account menu"><?php echo strtoupper(substr($_SESSION['user_name'] ?? 'U', 0, 1)); ?></div>
                     <div class="user-dropdown">
                         <div class="user-dropdown-header">
-                            <div class="user-avatar-sm"><?php echo strtoupper(substr($_SESSION['user_name'] ?? 'U', 0, 1)); ?></div>
+                            <div class="user-avatar-sm"><?php echo htmlspecialchars(strtoupper(substr($_SESSION['user_name'] ?? 'U', 0, 1))); ?></div>
                             <div><div class="user-dropdown-name"><?php echo htmlspecialchars($_SESSION['user_name'] ?? 'User'); ?></div>
                             <div class="user-dropdown-role"><?php echo isset($_SESSION['is_admin']) && $_SESSION['is_admin'] >= 1 ? 'Admin' : 'Landlord'; ?></div></div>
                         </div>
@@ -480,14 +482,25 @@ $house_images = loadHouseImages($conn);
         var wrap = btn.closest('.bell-wrap');
         var isOpen = wrap.classList.contains('open');
         document.querySelectorAll('.bell-wrap.open').forEach(function(w){ w.classList.remove('open'); });
+        document.querySelectorAll('.user-avatar-wrap.open').forEach(function(w){ w.classList.remove('open'); });
+        if(!isOpen) wrap.classList.add('open');
+    }
+    function toggleUserMenu(avatar){
+        var wrap = avatar.closest('.user-avatar-wrap');
+        var isOpen = wrap.classList.contains('open');
+        document.querySelectorAll('.bell-wrap.open').forEach(function(w){ w.classList.remove('open'); });
+        document.querySelectorAll('.user-avatar-wrap.open').forEach(function(w){ w.classList.remove('open'); });
         if(!isOpen) wrap.classList.add('open');
     }
     document.addEventListener('click', function(e){
-        if(!e.target.closest('.bell-wrap')) document.querySelectorAll('.bell-wrap.open').forEach(function(w){ w.classList.remove('open'); });
+        if(e.target.closest('.bell-wrap') || e.target.closest('.user-avatar-wrap')) return;
+        document.querySelectorAll('.bell-wrap.open, .user-avatar-wrap.open').forEach(function(w){ w.classList.remove('open'); });
     });
 
     function markAllRead(){
-        fetch('mark_notifications_read.php', {method: 'POST'}).then(function(){
+        var body = new FormData();
+        body.append('csrf_token', <?php echo json_encode($_SESSION['csrf_token']); ?>);
+        fetch('mark_notifications_read.php', {method: 'POST', body: body}).then(function(){
             var badge = document.getElementById('bellBadge');
             if(badge) badge.remove();
             var count = document.getElementById('notifCount');
@@ -539,6 +552,6 @@ $house_images = loadHouseImages($conn);
     })();
     </script>
 
-    <?php include('footer.php'); ?>
+    <?php include('includes/footer.php'); ?>
 </body>
 </html>

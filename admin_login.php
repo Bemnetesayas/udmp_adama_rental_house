@@ -1,9 +1,11 @@
 <?php
-include('session_config.php');
+include('includes/session_config.php');
 session_start();
-include('db.php');
+include('includes/db.php');
+include('includes/security.php');
 
 if(isset($_POST['login'])){
+    csrf_validate();
     $email = mysqli_real_escape_string($conn, $_POST['email']);
     $password = $_POST['password'];
 
@@ -13,6 +15,7 @@ if(isset($_POST['login'])){
     if($res && mysqli_num_rows($res) == 1){
         $user = mysqli_fetch_assoc($res);
         if(password_verify($password, $user['password'])){
+            session_regenerate_id(true);
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['user_name'] = $user['full_name'];
             $_SESSION['is_admin'] = (int)$user['is_admin']; 
@@ -98,6 +101,7 @@ if(isset($_POST['login'])){
             <?php endif; ?>
 
             <form method="POST">
+                <?php echo csrf_field(); ?>
                 <div class="form-group">
                     <label>Admin Email</label>
                     <div class="input-wrapper">

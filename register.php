@@ -1,8 +1,9 @@
 <?php
-include('session_config.php');
+include('includes/session_config.php');
 session_start();
-include('db.php');
-include('mail_helper.php');
+include('includes/db.php');
+include('includes/mail_helper.php');
+include('includes/security.php');
 
 function has_admin(): bool {
     global $conn;
@@ -22,6 +23,7 @@ function setup_key_valid(string $submitted): bool {
 $google_enabled = defined('GOOGLE_CLIENT_ID') && GOOGLE_CLIENT_ID !== '';
 
 if(isset($_POST['register'])){
+    csrf_validate();
     $name = mysqli_real_escape_string($conn, $_POST['full_name']);
     $email = mysqli_real_escape_string($conn, $_POST['email']);
     $pass = password_hash($_POST['password'], PASSWORD_DEFAULT);
@@ -137,6 +139,7 @@ if(isset($_POST['register'])){
             <?php endif; ?>
 
             <form method="POST">
+                <?php echo csrf_field(); ?>
                 <div class="form-group">
                     <label>Full Name</label>
                     <div class="input-wrapper">

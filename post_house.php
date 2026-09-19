@@ -1,7 +1,9 @@
 <?php 
-include('session_config.php');
+include('includes/session_config.php');
 session_start();
-include('db.php'); 
+include('includes/db.php');
+include('includes/security.php');
+if(!isset($_SESSION['csrf_token'])) csrf_token(); 
 
 if(!isset($_SESSION['user_id'])){
     header("Location: login.php");
@@ -137,10 +139,10 @@ if(!isset($_SESSION['user_id'])){
         </a>
         <div class="nav-right">
             <div class="user-avatar-wrap">
-                <div class="user-avatar"><?php echo strtoupper(substr($_SESSION['user_name'] ?? 'U', 0, 1)); ?></div>
+                <div class="user-avatar"><?php echo htmlspecialchars(strtoupper(substr($_SESSION['user_name'] ?? 'U', 0, 1))); ?></div>
                 <div class="user-dropdown">
                     <div class="user-dropdown-header">
-                        <div class="user-avatar-sm"><?php echo strtoupper(substr($_SESSION['user_name'] ?? 'U', 0, 1)); ?></div>
+                        <div class="user-avatar-sm"><?php echo htmlspecialchars(strtoupper(substr($_SESSION['user_name'] ?? 'U', 0, 1))); ?></div>
                         <div><div class="user-dropdown-name"><?php echo htmlspecialchars($_SESSION['user_name'] ?? 'User'); ?></div>
                         <div class="user-dropdown-role"><?php echo isset($_SESSION['is_admin']) && $_SESSION['is_admin'] >= 1 ? 'Admin' : 'Landlord'; ?></div></div>
                     </div>
@@ -164,6 +166,7 @@ if(!isset($_SESSION['user_id'])){
             <?php endif; ?>
 
             <form action="" method="POST" enctype="multipart/form-data">
+                    <?php echo csrf_field(); ?>
                 <!-- Location -->
                 <div class="form-section">
                     <div class="form-section-title"><i class="fas fa-location-dot"></i> Location Details</div>
@@ -324,6 +327,7 @@ if(!isset($_SESSION['user_id'])){
     $submitted = false;
 
     if(isset($_POST['submit'])){
+        csrf_validate();
         $upload_dir = __DIR__ . '/uploads';
         if (!is_dir($upload_dir)) {
             mkdir($upload_dir, 0777, true);
@@ -346,7 +350,7 @@ if(!isset($_SESSION['user_id'])){
         } else {
             $photos  = $_FILES['house_photos'];
             $names   = [];
-            $allowed = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+            $allowed = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'heic', 'heif'];
             $total   = count($photos['name']);
 
             for($i = 0; $i < $total; $i++){
@@ -368,14 +372,26 @@ if(!isset($_SESSION['user_id'])){
 
                 $ext = strtolower(pathinfo($photos['name'][$i], PATHINFO_EXTENSION));
                 if(!in_array($ext, $allowed, true)){
-                    $toast_error = 'Upload failed: Only JPG, PNG, WebP or GIF photos are allowed.';
+                    $toast_error = 'Upload failed: Only JPG, PNG, WebP, GIF, HEIC or HEIF photos are allowed.';
                     break;
                 }
 
-                $fname  = time() . '_' . bin2hex(random_bytes(4)) . '_' . basename($photos['name'][$i]);
+                $fname  = time() . '_' . bin2hex(random_bytes(6)) . '.' . $ext;
                 $target = $upload_dir . '/' . $fname;
 
                 if(move_uploaded_file($photos['tmp_name'][$i], $target)){
+                    if(in_array($ext, ['heic', 'heif'], true)){
+                        $jpgName = preg_replace('/\.(heic|heif)$/i', '', $fname) . '.jpg';
+                        $out = shell_exec("/usr/bin/sips -s format jpeg " . escapeshellarg($target) . " --out " . escapeshellarg($upload_dir . '/' . $jpgName) . " 2>&1");
+                        if($out !== null && file_exists($upload_dir . '/' . $jpgName) && filesize($upload_dir . '/' . $jpgName) > 0){
+                            @unlink($target);
+                            $fname = $jpgName;
+                        } else {
+                            @unlink($target);
+                            $toast_error = 'Upload failed: Could not convert HEIC photo to JPEG.';
+                            break;
+                        }
+                    }
                     $names[] = $fname;
                 } else {
                     $toast_error = 'Upload failed: move_uploaded_file returned false. Check server error log.';
@@ -393,8 +409,9 @@ if(!isset($_SESSION['user_id'])){
                 $toast_error = 'Upload failed: No valid photos were processed.';
             } else {
                 $featured = array_shift($names);
+                $featured_safe = mysqli_real_escape_string($conn, $featured);
                 $sql = "INSERT INTO houses (kebele, street, house_number, category, amount, phone, map_link, image, description, user_id, status, is_approved, created_at) 
-                        VALUES ('$kebele', '$street', '$h_num', '$category', '$amount', '$phone', '$map', '$featured', '$desc', $user_id, 'Pending', 0, NOW())";
+                        VALUES ('$kebele', '$street', '$h_num', '$category', '$amount', '$phone', '$map', '$featured_safe', '$desc', $user_id, 'Pending', 0, NOW())";
 
                 if(mysqli_query($conn, $sql)){
                     $house_id = mysqli_insert_id($conn);
@@ -410,7 +427,8 @@ if(!isset($_SESSION['user_id'])){
                     mysqli_query($conn, $req_sql);
                     $order = 1;
                     foreach($names as $fn){
-                        mysqli_query($conn, "INSERT INTO house_images (house_id, filename, sort_order) VALUES ($house_id, '$fn', $order)");
+                        $fn_safe = mysqli_real_escape_string($conn, $fn);
+                        mysqli_query($conn, "INSERT INTO house_images (house_id, filename, sort_order) VALUES ($house_id, '$fn_safe', $order)");
                         $order++;
                     }
                     $submitted = true;
@@ -426,7 +444,7 @@ if(!isset($_SESSION['user_id'])){
     }
     ?>
 
-    <?php include(__DIR__ . '/popup.php'); ?>
+    <?php include(__DIR__ . '/includes/popup.php'); ?>
 
     <?php if($submitted): ?>
     <div class="ph-overlay ph-active" id="phSuccess">

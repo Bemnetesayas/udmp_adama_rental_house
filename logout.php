@@ -1,5 +1,5 @@
 <?php
-include('session_config.php');
+include('includes/session_config.php');
 session_start();
 
 // 1. Clear all session variables

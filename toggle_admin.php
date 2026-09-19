@@ -1,7 +1,8 @@
 <?php
-include('session_config.php');
+include('includes/session_config.php');
 session_start();
-include('db.php');
+include('includes/db.php');
+include('includes/security.php');
 
 // Security check
 if(!isset($_SESSION['is_admin']) || $_SESSION['is_admin'] != 1){
@@ -9,6 +10,7 @@ if(!isset($_SESSION['is_admin']) || $_SESSION['is_admin'] != 1){
 }
 
 if($_SERVER['REQUEST_METHOD'] == 'POST'){
+    csrf_validate();
     $user_id = (int)$_POST['user_id'];
     $current_status = (int)$_POST['current_status'];
 

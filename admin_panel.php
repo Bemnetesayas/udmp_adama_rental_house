@@ -1,7 +1,7 @@
 <?php
-include('session_config.php');
+include('includes/session_config.php');
 session_start();
-include('db.php');
+include('includes/db.php');
 
 if(!isset($_SESSION['is_admin']) || $_SESSION['is_admin'] < 1) {
     header("Location: login.php"); 
@@ -26,7 +26,7 @@ $pending_req = mysqli_num_rows(mysqli_query($conn, "SELECT id FROM requests WHER
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - AdamaRent Admin</title>
-    <?php include(__DIR__ . '/header.php'); ?>
+    <?php include(__DIR__ . '/includes/header.php'); ?>
 </head>
 <body>
     <main class="content">

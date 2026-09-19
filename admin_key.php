@@ -1,7 +1,8 @@
 <?php
-include('session_config.php');
+include('includes/session_config.php');
 session_start();
-include('db.php');
+include('includes/db.php');
+include('includes/security.php');
 
 // Must be logged in
 if(!isset($_SESSION['user_id']) || (int)$_SESSION['user_id'] <= 0){
@@ -23,6 +24,7 @@ if($inv_check && mysqli_num_rows($inv_check) > 0){
 }
 
 if($_SERVER['REQUEST_METHOD'] == 'POST'){
+    csrf_validate();
     $key = trim($_POST['key'] ?? '');
     $key_hash = hash('sha256', $key);
 
@@ -78,6 +80,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
         <?php if($error): ?><div class="error"><?php echo $error; ?></div><?php endif; ?>
 
         <form method="POST">
+            <?php echo csrf_field(); ?>
             <label>Admin Invite Key</label>
             <input type="text" name="key" placeholder="Paste key here" required autocomplete="off">
             <button type="submit" class="btn">Activate Admin Access</button>

@@ -1,7 +1,8 @@
 <?php
-include('session_config.php');
+include('includes/session_config.php');
 session_start();
-include('db.php');
+include('includes/db.php');
+include('includes/security.php');
 
 if(!isset($_SESSION['is_admin']) || $_SESSION['is_admin'] < 1){
     header('Location: login.php');
@@ -37,7 +38,7 @@ $msg = isset($_GET['msg'], $flash[$_GET['msg']]) ? $flash[$_GET['msg']] : null;
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pending Approvals - AdamaRent Admin</title>
-    <?php include(__DIR__ . '/header.php'); ?>
+    <?php include(__DIR__ . '/includes/header.php'); ?>
 </head>
 <body>
 <div class="content">

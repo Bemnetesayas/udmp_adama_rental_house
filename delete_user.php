@@ -1,7 +1,8 @@
 <?php
-include('session_config.php');
+include('includes/session_config.php');
 session_start();
-include('db.php');
+include('includes/db.php');
+include('includes/security.php');
 
 // Only super admin can delete users
 if(!isset($_SESSION['is_admin']) || $_SESSION['is_admin'] < 2){
@@ -10,6 +11,7 @@ if(!isset($_SESSION['is_admin']) || $_SESSION['is_admin'] < 2){
 }
 
 if($_SERVER['REQUEST_METHOD'] == 'POST'){
+    csrf_validate();
     $target_id = (int)($_POST['user_id'] ?? 0);
     $my_id = (int)$_SESSION['user_id'];
 

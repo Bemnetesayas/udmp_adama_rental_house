@@ -1,8 +1,7 @@
 -- AdamaRent Database Setup (structural only — NO auto admin account)
--- Run this once after cloning, OR just visit setup.php in your browser.
-
-CREATE DATABASE IF NOT EXISTS rental_db;
-USE rental_db;
+-- Select/create your database in phpMyAdmin FIRST, then import this file.
+-- (Shared hosts like InfinityFree deny CREATE DATABASE, so it is intentionally omitted.)
+-- Alternatively, just visit setup.php in your browser.
 
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
