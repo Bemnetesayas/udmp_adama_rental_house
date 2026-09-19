@@ -99,7 +99,7 @@ $invites = mysqli_query($conn, "SELECT ai.*, u.full_name, u.is_admin FROM admin_
             <?php echo csrf_field(); ?>
             <label>Landlord's Email Address</label>
             <input type="email" name="email" placeholder="landlord@example.com" required>
-            <button type="submit" name="action" value="generate" class="btn btn-primary"><i class="fas fa-envelope"></i> Generate Invite Key</button>
+            <button type="submit" name="action" value="generate" class="btn btn-primary" style="margin-top:16px"><i class="fas fa-envelope"></i> Generate Invite Key</button>
         </form>
     </div>
 
