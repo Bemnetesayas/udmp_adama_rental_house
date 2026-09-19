@@ -105,7 +105,7 @@ $msg = isset($_GET['msg'], $flash[$_GET['msg']]) ? $flash[$_GET['msg']] : null;
                     </div>
                 </div>
                 <div class="req-actions">
-                    <a href="admin_review_house.php?id=<?php echo $house['id']; ?>" class="btn"><i class="fas fa-search"></i> Review</a>
+                    <a href="admin_review_house.php?id=<?php echo $house['id']; ?>" class="btn"><i class="fas fa-eye"></i> Review</a>
                 </div>
             </div>
         <?php endwhile; ?>
@@ -142,7 +142,7 @@ $msg = isset($_GET['msg'], $flash[$_GET['msg']]) ? $flash[$_GET['msg']] : null;
                     </div>
                 </div>
                 <div class="req-actions">
-                    <a href="admin_review_house.php?id=<?php echo $house['id']; ?>" class="btn"><i class="fas fa-search"></i> Review</a>
+                    <a href="admin_review_house.php?id=<?php echo $house['id']; ?>" class="btn"><i class="fas fa-eye"></i> Review</a>
                 </div>
             </div>
         <?php endwhile; ?>
