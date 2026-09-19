@@ -1,7 +1,8 @@
 <?php
-include('db.php');
-include('session_config.php');
+include('includes/db.php');
+include('includes/session_config.php');
 session_start();
+include('includes/security.php');
 
 if(!isset($_SESSION['user_id'])){
     header("Location: login.php");
@@ -12,6 +13,7 @@ if(!isset($_POST['delete_btn'])){
     header("Location: manage_houses.php");
     exit();
 }
+csrf_validate();
 
 $id = (int)$_POST['id'];
 $input_key = isset($_POST['key']) ? mysqli_real_escape_string($conn, $_POST['key']) : null;
@@ -67,7 +69,7 @@ if($query && mysqli_num_rows($query) > 0){
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 </head>
 <body style="margin:0;background:#f8fafc;font-family:'Inter',sans-serif">
-    <?php include(__DIR__ . '/popup.php'); ?>
+    <?php include(__DIR__ . '/includes/popup.php'); ?>
     <script>
         window.addEventListener('DOMContentLoaded', function(){
             showToast(<?php echo json_encode($status['message']); ?>, <?php echo json_encode($status['type']); ?>, <?php echo json_encode($status['title']); ?>);

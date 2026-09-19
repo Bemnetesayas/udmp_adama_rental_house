@@ -1,8 +1,8 @@
 <?php
-include('session_config.php');
+include('includes/session_config.php');
 session_start();
-include('db.php');
-include('mail_helper.php');
+include('includes/db.php');
+include('includes/mail_helper.php');
 
 function google_redirect($target = 'login.php?google=error') {
     header("Location: $target");
@@ -89,6 +89,7 @@ if ($res && ($user = mysqli_fetch_assoc($res))) {
 
 $_SESSION['user_id'] = $user['id'];
 $_SESSION['user_name'] = $user['full_name'];
+session_regenerate_id(true);
 if ((int)$user['is_admin'] >= 1) {
     $_SESSION['is_admin'] = (int)$user['is_admin'];
     header("Location: admin_panel.php");

@@ -1,7 +1,8 @@
 <?php
-include('session_config.php');
+include('includes/session_config.php');
 session_start();
-include('db.php');
+include('includes/db.php');
+include('includes/security.php');
 
 // Must be logged in with a pending invite
 if(!isset($_SESSION['user_id']) || !isset($_SESSION['pending_admin_key'])){
@@ -14,6 +15,7 @@ $error = '';
 $msg = '';
 
 if($_SERVER['REQUEST_METHOD'] == 'POST'){
+    csrf_validate();
     $key = trim($_POST['key'] ?? '');
     $key_hash = hash('sha256', $key);
 
@@ -69,6 +71,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
         <?php if($error): ?><div class="error"><?php echo $error; ?></div><?php endif; ?>
 
         <form method="POST">
+            <?php echo csrf_field(); ?>
             <label>Admin Invite Key</label>
             <input type="text" name="key" placeholder="Paste key here" required autocomplete="off">
             <button type="submit" class="btn">Activate Admin Access</button>

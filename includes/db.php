@@ -1,10 +1,16 @@
 <?php
 error_reporting(E_ALL & ~E_NOTICE & ~E_WARNING);
 ini_set('display_errors', 0);
-$host = "localhost";
-$user = "root";
-$pass = "";
-$dbname = "rental_db";
+
+// DB credentials come from config_secrets.php (gitignored so each machine/host
+// uses its own values). Falls back to local XAMPP defaults when not defined.
+if (file_exists(__DIR__ . '/../config/config_secrets.php')) {
+    require_once __DIR__ . '/../config/config_secrets.php';
+}
+$host   = defined('DB_HOST') ? DB_HOST : "localhost";
+$user   = defined('DB_USER') ? DB_USER : "root";
+$pass   = defined('DB_PASS') ? DB_PASS : "";
+$dbname = defined('DB_NAME') ? DB_NAME : "rental_db";
 
 $conn = mysqli_connect($host, $user, $pass, $dbname);
 

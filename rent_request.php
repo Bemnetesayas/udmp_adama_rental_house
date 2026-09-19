@@ -1,7 +1,8 @@
 <?php
-include('db.php');
-include('session_config.php');
+include('includes/db.php');
+include('includes/session_config.php');
 session_start();
+include('includes/security.php');
 
 // Tenant "rent request" action — requires login.
 $isAjax = (($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'XMLHttpRequest') || isset($_GET['ajax']);
@@ -17,7 +18,9 @@ if(!isset($_SESSION['user_id'])){
 }
 
 $status = null; // ['type','message','title','redirect']
-$house_id = (int)($_GET['house'] ?? 0);
+$house_id = (int)($_POST['house'] ?? 0);
+
+if($house_id > 0){ csrf_validate(); }
 
 if($house_id <= 0){
     $status = ['type' => 'error', 'message' => 'No property was specified.', 'title' => 'Invalid request', 'redirect' => 'index.php'];
@@ -68,7 +71,7 @@ if($house_id <= 0){
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 </head>
 <body style="margin:0;background:#f8fafc;font-family:'Inter',sans-serif">
-    <?php include(__DIR__ . '/popup.php'); ?>
+    <?php include(__DIR__ . '/includes/popup.php'); ?>
     <script>
         window.addEventListener('DOMContentLoaded', function(){
             showToast(<?php echo json_encode($status['message']); ?>, <?php echo json_encode($status['type']); ?>, <?php echo json_encode($status['title']); ?>);

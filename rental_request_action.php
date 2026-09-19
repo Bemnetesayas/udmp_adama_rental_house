@@ -1,22 +1,25 @@
 <?php
-include('session_config.php');
+include('includes/session_config.php');
 session_start();
-include('db.php');
+include('includes/db.php');
+include('includes/security.php');
 
 if(!isset($_SESSION['user_id'])){
     header("Location: login.php");
     exit();
 }
 
-$isAjax = (($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'XMLHttpRequest') || isset($_GET['ajax']);
-$id = (int)($_GET['id'] ?? 0);
-$action = $_GET['action'] ?? '';
+$isAjax = (($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'XMLHttpRequest') || isset($_POST['ajax']);
+$id = (int)($_POST['id'] ?? 0);
+$action = $_POST['action'] ?? $isAjax ? ($_POST['action'] ?? '') : ($_GET['action'] ?? '');
 $me = (int)$_SESSION['user_id'];
 
 if($id <= 0 || !in_array($action, ['accept', 'reject', 'cancel'], true)){
     header("Location: manage_houses.php");
     exit();
 }
+
+csrf_validate();
 
 // Tenant withdraws their own pending rental request
 if($action === 'cancel'){

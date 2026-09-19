@@ -1,7 +1,7 @@
 <?php
-include('session_config.php');
+include('includes/session_config.php');
 session_start();
-include('mail_helper.php');
+include('includes/mail_helper.php');
 
 if (GOOGLE_CLIENT_ID === '' || GOOGLE_CLIENT_SECRET === '') {
     ?>

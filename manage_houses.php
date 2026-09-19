@@ -1,7 +1,8 @@
 <?php 
-include('session_config.php');
+include('includes/session_config.php');
 session_start();
-include('db.php');
+include('includes/db.php');
+include('includes/security.php');
 
 if(!isset($_SESSION['user_id'])){
     header("Location: login.php");
@@ -183,10 +184,10 @@ foreach($rental_reqs as $r){ if($r['req_status'] === 'pending') $pending_req_cou
             <a href="index.php"><i class="fas fa-home"></i> Home</a>
             <a href="post_house.php" class="btn-post"><i class="fas fa-plus"></i> New Posts</a>
             <div class="user-avatar-wrap">
-                <div class="user-avatar"><?php echo strtoupper(substr($_SESSION['user_name'] ?? 'U', 0, 1)); ?></div>
+                <div class="user-avatar"><?php echo htmlspecialchars(strtoupper(substr($_SESSION['user_name'] ?? 'U', 0, 1))); ?></div>
                 <div class="user-dropdown">
                     <div class="user-dropdown-header">
-                        <div class="user-avatar-sm"><?php echo strtoupper(substr($_SESSION['user_name'] ?? 'U', 0, 1)); ?></div>
+                        <div class="user-avatar-sm"><?php echo htmlspecialchars(strtoupper(substr($_SESSION['user_name'] ?? 'U', 0, 1))); ?></div>
                         <div><div class="user-dropdown-name"><?php echo htmlspecialchars($_SESSION['user_name'] ?? 'User'); ?></div>
                         <div class="user-dropdown-role"><?php echo isset($_SESSION['is_admin']) && $_SESSION['is_admin'] >= 1 ? 'Admin' : 'Landlord'; ?></div></div>
                     </div>
@@ -244,7 +245,7 @@ foreach($rental_reqs as $r){ if($r['req_status'] === 'pending') $pending_req_cou
             <div class="req-list">
                 <?php foreach($rental_reqs as $r): ?>
                     <div class="req-item">
-                        <div class="req-avatar"><?php echo strtoupper(substr($r['full_name'] ?? 'T', 0, 1)); ?></div>
+                        <div class="req-avatar"><?php echo htmlspecialchars(strtoupper(substr($r['full_name'] ?? 'T', 0, 1))); ?></div>
                         <div class="req-info">
                             <div class="req-tenant">
                                 <?php echo htmlspecialchars($r['full_name'] ?? 'Tenant'); ?>
@@ -255,8 +256,18 @@ foreach($rental_reqs as $r){ if($r['req_status'] === 'pending') $pending_req_cou
                         </div>
                         <?php if($r['req_status'] === 'pending'): ?>
                             <div class="req-actions">
-                                <a href="javascript:void(0)" onclick="confirmAccept(<?php echo $r['id']; ?>)" class="btn-accept"><i class="fas fa-check"></i> Accept</a>
-                                <a href="javascript:void(0)" onclick="confirmReject(<?php echo $r['id']; ?>)" class="btn-reject"><i class="fas fa-xmark"></i> Decline</a>
+                                <form action="rental_request_action.php" method="POST" id="rr-accept-<?php echo (int)$r['id']; ?>" style="display:inline">
+                                    <?php echo csrf_field(); ?>
+                                    <input type="hidden" name="action" value="accept">
+                                    <input type="hidden" name="id" value="<?php echo (int)$r['id']; ?>">
+                                    <a href="javascript:void(0)" onclick="confirmAccept(<?php echo (int)$r['id']; ?>)" class="btn-accept"><i class="fas fa-check"></i> Accept</a>
+                                </form>
+                                <form action="rental_request_action.php" method="POST" id="rr-reject-<?php echo (int)$r['id']; ?>" style="display:inline">
+                                    <?php echo csrf_field(); ?>
+                                    <input type="hidden" name="action" value="reject">
+                                    <input type="hidden" name="id" value="<?php echo (int)$r['id']; ?>">
+                                    <a href="javascript:void(0)" onclick="confirmReject(<?php echo (int)$r['id']; ?>)" class="btn-reject"><i class="fas fa-xmark"></i> Decline</a>
+                                </form>
                             </div>
                         <?php endif; ?>
                     </div>
@@ -296,9 +307,13 @@ foreach($rental_reqs as $r){ if($r['req_status'] === 'pending') $pending_req_cou
                         </div>
                         <div class="card-actions">
                             <?php if($status === 'Available' || strcasecmp($status,'Rented')===0): ?>
-                                <a href="toggle_status.php?id=<?php echo (int)$row['id']; ?>" class="btn-toggle">
-                                    <i class="fas fa-sync-alt"></i> <?php echo ($status=='Available') ? 'Mark Rented' : 'Mark Available'; ?>
-                                </a>
+                                <form action="toggle_status.php" method="POST" style="display:contents">
+                                    <?php echo csrf_field(); ?>
+                                    <input type="hidden" name="id" value="<?php echo (int)$row['id']; ?>">
+                                    <button type="submit" class="btn-toggle">
+                                        <i class="fas fa-sync-alt"></i> <?php echo ($status=='Available') ? 'Mark Rented' : 'Mark Available'; ?>
+                                    </button>
+                                </form>
                             <?php elseif(strcasecmp($status,'Pending')===0): ?>
                                 <span class="btn-toggle btn-disabled"><i class="fas fa-clock"></i> Awaiting Approval</span>
                             <?php else: ?>
@@ -308,6 +323,7 @@ foreach($rental_reqs as $r){ if($r['req_status'] === 'pending') $pending_req_cou
                                 <i class="fas fa-edit"></i> Edit
                             </a>
                             <form action="delete.php" method="POST" id="del-myhouse-<?php echo $row['id']; ?>" style="display:contents">
+                                <?php echo csrf_field(); ?>
                                 <input type="hidden" name="id" value="<?php echo $row['id']; ?>">
                                 <input type="hidden" name="delete_btn" value="1">
                                 <button type="button" class="btn-delete" onclick="confirmMyListingDelete(<?php echo $row['id']; ?>)"><i class="fas fa-trash"></i> Delete</button>
@@ -324,14 +340,14 @@ foreach($rental_reqs as $r){ if($r['req_status'] === 'pending') $pending_req_cou
         </div>
     </div>
 
-    <?php include(__DIR__ . '/popup.php'); ?>
+    <?php include(__DIR__ . '/includes/popup.php'); ?>
     <script>
     function confirmAccept(id){
         adamaConfirm({
             title: "Accept rental request",
             message: "Accept this rental request? The property will be marked as rented.",
             confirmText: "Accept",
-            onConfirm: function(){ window.location = "rental_request_action.php?action=accept&id=" + id; }
+            onConfirm: function(){ var f = document.getElementById('rr-accept-' + id); if(f) f.submit(); }
         });
     }
     function confirmReject(id){
@@ -339,7 +355,7 @@ foreach($rental_reqs as $r){ if($r['req_status'] === 'pending') $pending_req_cou
             title: "Decline rental request",
             message: "Decline this rental request?",
             confirmText: "Decline",
-            onConfirm: function(){ window.location = "rental_request_action.php?action=reject&id=" + id; }
+            onConfirm: function(){ var f = document.getElementById('rr-reject-' + id); if(f) f.submit(); }
         });
     }
     function confirmMyListingDelete(id){
@@ -352,6 +368,6 @@ foreach($rental_reqs as $r){ if($r['req_status'] === 'pending') $pending_req_cou
     }
     </script>
 
-    <?php include('footer.php'); ?>
+    <?php include('includes/footer.php'); ?>
 </body>
 </html>

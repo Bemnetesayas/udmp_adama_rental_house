@@ -1,7 +1,8 @@
 <?php
-include('session_config.php');
+include('includes/session_config.php');
 session_start();
-include('db.php');
+include('includes/db.php');
+include('includes/security.php');
 
 if(!isset($_SESSION['is_admin']) || $_SESSION['is_admin'] < 1){
     header('Location: login.php');
@@ -22,7 +23,7 @@ $msg = isset($_GET['msg'], $flash[$_GET['msg']]) ? $flash[$_GET['msg']] : null;
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pending Approvals - AdamaRent Admin</title>
-    <?php include(__DIR__ . '/header.php'); ?>
+    <?php include(__DIR__ . '/includes/header.php'); ?>
 </head>
 <body>
 <div class="content">
@@ -72,8 +73,18 @@ $msg = isset($_GET['msg'], $flash[$_GET['msg']]) ? $flash[$_GET['msg']] : null;
                     </div>
                 </div>
                 <div class="req-actions">
-                    <a href="admin_actions.php?action=approve&id=<?php echo $req['id']; ?>" class="btn btn-success"><i class="fas fa-check"></i> Approve</a>
-                    <a href="admin_actions.php?action=reject&id=<?php echo $req['id']; ?>" class="btn btn-danger-ghost"><i class="fas fa-times"></i> Reject</a>
+                    <form action="admin_actions.php" method="POST" style="display:inline">
+                        <?php echo csrf_field(); ?>
+                        <input type="hidden" name="action" value="approve">
+                        <input type="hidden" name="id" value="<?php echo (int)$req['id']; ?>">
+                        <button type="submit" class="btn btn-success"><i class="fas fa-check"></i> Approve</button>
+                    </form>
+                    <form action="admin_actions.php" method="POST" style="display:inline">
+                        <?php echo csrf_field(); ?>
+                        <input type="hidden" name="action" value="reject">
+                        <input type="hidden" name="id" value="<?php echo (int)$req['id']; ?>">
+                        <button type="submit" class="btn btn-danger-ghost"><i class="fas fa-times"></i> Reject</button>
+                    </form>
                 </div>
             </div>
         <?php endwhile; ?>
@@ -112,8 +123,18 @@ $msg = isset($_GET['msg'], $flash[$_GET['msg']]) ? $flash[$_GET['msg']] : null;
                     </div>
                 </div>
                 <div class="req-actions">
-                    <a href="admin_actions.php?action=approve_house&id=<?php echo $house['id']; ?>" class="btn btn-success"><i class="fas fa-check"></i> Approve</a>
-                    <a href="admin_actions.php?action=reject_house&id=<?php echo $house['id']; ?>" class="btn btn-danger-ghost"><i class="fas fa-times"></i> Reject</a>
+                    <form action="admin_actions.php" method="POST" style="display:inline">
+                        <?php echo csrf_field(); ?>
+                        <input type="hidden" name="action" value="approve_house">
+                        <input type="hidden" name="id" value="<?php echo (int)$house['id']; ?>">
+                        <button type="submit" class="btn btn-success"><i class="fas fa-check"></i> Approve</button>
+                    </form>
+                    <form action="admin_actions.php" method="POST" style="display:inline">
+                        <?php echo csrf_field(); ?>
+                        <input type="hidden" name="action" value="reject_house">
+                        <input type="hidden" name="id" value="<?php echo (int)$house['id']; ?>">
+                        <button type="submit" class="btn btn-danger-ghost"><i class="fas fa-times"></i> Reject</button>
+                    </form>
                 </div>
             </div>
         <?php endwhile; ?>
