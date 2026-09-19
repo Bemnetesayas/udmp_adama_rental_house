@@ -423,7 +423,7 @@ if(!isset($_SESSION['user_id'])){
                             }
                         }
                     }
-                    $req_sql = "INSERT INTO requests (user_id, house_id, status, created_at) VALUES ($user_id, $house_id, 0, NOW())";
+                    $req_sql = "INSERT INTO requests (user_id, house_id, status, type, created_at) VALUES ($user_id, $house_id, 0, 'new', NOW())";
                     mysqli_query($conn, $req_sql);
                     $order = 1;
                     foreach($names as $fn){

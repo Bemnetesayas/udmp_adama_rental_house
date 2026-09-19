@@ -133,13 +133,83 @@ if(isset($_POST['update'])){
 
         if(!$error){
             $img_safe = mysqli_real_escape_string($conn, $imgName);
+
+            $was_approved = isset($data['is_approved']) && (int)$data['is_approved'] === 1;
+            if(!$was_approved){
+                $prev_q = mysqli_query($conn, "SELECT COUNT(*) FROM requests WHERE house_id=$house_id AND status=1");
+                if($prev_q && ($c = mysqli_fetch_row($prev_q)) && (int)$c[0] > 0) $was_approved = true;
+            }
+            $changes_json = '';
+            if($was_approved){
+                $labels = [
+                    'kebele'       => 'Kebele',
+                    'street'       => 'Street Name',
+                    'house_number' => 'House Number',
+                    'category'     => 'Category',
+                    'amount'       => 'Monthly Price (ETB)',
+                    'phone'        => 'Contact Phone',
+                    'map_link'     => 'Map Link',
+                    'description'  => 'Description',
+                ];
+                $field_sets = [
+                    'kebele'       => [(string)($data['kebele'] ?? ''), $kebele],
+                    'street'       => [(string)($data['street'] ?? ''), $street],
+                    'house_number' => [(string)($data['house_number'] ?? ''), $h_num],
+                    'category'     => [(string)($data['category'] ?? ''), $category],
+                    'amount'       => [(string)($data['amount'] ?? 0), (string)$amount],
+                    'phone'        => [(string)($data['phone'] ?? ''), $phone],
+                    'map_link'     => [(string)($data['map_link'] ?? ''), $map],
+                    'description'  => [(string)($data['description'] ?? ''), $desc],
+                ];
+                $changes = [];
+                foreach($field_sets as $key => $pair){
+                    if($pair[0] !== $pair[1]){
+                        $changes[] = ['field' => $labels[$key], 'from' => $pair[0], 'to' => $pair[1]];
+                    }
+                }
+
+                if($imgName !== ($data['image'] ?? '') && !empty($data['image'])){
+                    $changes[] = ['field' => 'Cover photo', 'from' => basename($data['image']), 'to' => basename($imgName)];
+                }
+
+                $old_gallery_files = [];
+                foreach($gallery as $g) $old_gallery_files[] = $g['filename'];
+                $remove_imgs = isset($_POST['remove_img']) && is_array($_POST['remove_img']) ? array_map('basename', $_POST['remove_img']) : [];
+                $new_gallery_files = array_values(array_diff($old_gallery_files, $remove_imgs));
+                foreach($newGallery as $fn) $new_gallery_files[] = $fn;
+                $g_added   = array_values(array_diff($new_gallery_files, $old_gallery_files));
+                $g_removed = array_values(array_diff($old_gallery_files, $new_gallery_files));
+                if($g_added || $g_removed){
+                    $changes[] = ['field' => 'Gallery photos', 'from' => count($old_gallery_files), 'to' => count($new_gallery_files), 'added' => $g_added, 'removed' => $g_removed];
+                }
+
+                $old_amen = array_keys($current_amenities);
+                $new_amen = [];
+                if(isset($_POST['amenities']) && is_array($_POST['amenities'])){
+                    foreach($_POST['amenities'] as $aid){
+                        $aid = (int)$aid;
+                        if($aid > 0 && !isset($new_amen[$aid])) $new_amen[$aid] = $aid;
+                    }
+                }
+                $new_amen = array_values($new_amen);
+                $am_added   = array_values(array_diff($new_amen, $old_amen));
+                $am_removed = array_values(array_diff($old_amen, $new_amen));
+                if($am_added || $am_removed){
+                    $changes[] = ['field' => 'Amenities', 'added' => $am_added, 'removed' => $am_removed];
+                }
+
+                $changes_json = json_encode($changes, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            }
+
             $update_sql = "UPDATE houses SET kebele='$kebele', street='$street', house_number='$h_num', category='$category',
                            amount=$amount, phone='$phone', map_link='$map', description='$desc', image='$img_safe',
                            status='Pending', is_approved=0
                            WHERE id=$house_id AND user_id=$user_id";
 
             if(mysqli_query($conn, $update_sql)){
-                mysqli_query($conn, "INSERT INTO requests (user_id, house_id, status, created_at) VALUES ($user_id, $house_id, 0, NOW())");
+                $req_type = $was_approved ? 'edit' : 'new';
+                $changes_col = ($changes_json === '' || $changes_json === '[]') ? 'NULL' : "'" . mysqli_real_escape_string($conn, $changes_json) . "'";
+                mysqli_query($conn, "INSERT INTO requests (user_id, house_id, status, type, changes, created_at) VALUES ($user_id, $house_id, 0, '$req_type', $changes_col, NOW())");
                 if($imgName !== $data['image'] && !empty($data['image'])){
                     @unlink($upload_dir . '/' . basename($data['image']));
                 }

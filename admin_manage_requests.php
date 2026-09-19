@@ -9,7 +9,11 @@ if(!isset($_SESSION['is_admin']) || $_SESSION['is_admin'] < 1){
     exit();
 }
 
-$requests = mysqli_query($conn, "SELECT * FROM requests WHERE status = 0 ORDER BY created_at DESC");
+$requests = mysqli_query($conn, "SELECT r.id AS request_id, r.house_id, r.created_at AS requested_at, r.type AS request_type, h.*, u.full_name AS owner_name
+                                 FROM requests r
+                                 JOIN houses h ON h.id = r.house_id
+                                 LEFT JOIN users u ON u.id = r.user_id
+                                 WHERE r.status = 0 ORDER BY r.created_at DESC");
 
 function get_house_images($conn, $house_id){
     $house_id = (int)$house_id;
@@ -35,8 +39,12 @@ $msg = isset($_GET['msg'], $flash[$_GET['msg']]) ? $flash[$_GET['msg']] : null;
     <title>Pending Approvals - AdamaRent Admin</title>
     <?php include(__DIR__ . '/includes/header.php'); ?>
     <style>
-        .request-card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:18px;margin-bottom:16px;display:flex;gap:22px;align-items:stretch;box-shadow:0 1px 3px rgba(15,23,42,.04);transition:box-shadow .25s ease,transform .25s ease,border-color .25s ease}
+        .request-card{position:relative;background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:18px;margin-bottom:16px;display:flex;gap:22px;align-items:stretch;box-shadow:0 1px 3px rgba(15,23,42,.04);transition:box-shadow .25s ease,transform .25s ease,border-color .25s ease}
         .request-card:hover{border-color:#cbd5e1;box-shadow:0 10px 28px rgba(15,23,42,.08);transform:translateY(-2px)}
+        .request-card.card-edit{border-color:rgba(139,92,246,.35);background:linear-gradient(180deg,#fff 0%,rgba(139,92,246,.03) 100%)}
+        .edit-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(139,92,246,.12);color:#7c3aed;border:1px solid rgba(139,92,246,.25);font-size:11px;font-weight:700;padding:5px 12px;border-radius:999px;margin-bottom:10px}
+        .edit-badge.new-badge{background:rgba(13,148,136,.1);color:#0d9488;border-color:rgba(13,148,136,.2)}
+        .req-badge-margin{margin-top:-2px}
         .req-img{flex:0 0 220px;position:relative;border-radius:12px;overflow:hidden;background:#f1f5f9;align-self:center}
         .req-img img{width:220px;height:150px;object-fit:cover;display:block}
         .req-img .img-count{position:absolute;right:8px;bottom:8px;background:rgba(15,23,42,.72);color:#fff;font-size:11px;font-weight:600;padding:4px 10px;border-radius:999px;display:inline-flex;align-items:center;gap:5px;backdrop-filter:blur(4px)}
@@ -80,13 +88,12 @@ $msg = isset($_GET['msg'], $flash[$_GET['msg']]) ? $flash[$_GET['msg']] : null;
     <?php endif; ?>
 
     <?php if($requests && mysqli_num_rows($requests) > 0): ?>
-        <?php while($req = mysqli_fetch_assoc($requests)): 
-            $user_res = mysqli_query($conn, "SELECT full_name FROM users WHERE id = " . (int)$req['user_id']);
-            $user = $user_res ? mysqli_fetch_assoc($user_res) : null;
-            $house_res = mysqli_query($conn, "SELECT * FROM houses WHERE id = " . (int)$req['house_id']);
-            $house = $house_res ? mysqli_fetch_assoc($house_res) : null;
+        <?php while($req = mysqli_fetch_assoc($requests)):
+            $house = $req;
+            $review_type = strtolower($req['request_type'] ?? 'new');
+            $is_edit = $review_type === 'edit';
         ?>
-            <div class="request-card">
+            <div class="request-card<?php echo $is_edit ? ' card-edit' : ''; ?>">
                 <?php $photos = get_house_images($conn, $house['id']); $thumb = !empty($photos) ? $photos[0] : ''; $photo_count = count($photos); ?>
                 <div class="req-img">
                     <?php if(!empty($thumb)): ?>
@@ -97,11 +104,16 @@ $msg = isset($_GET['msg'], $flash[$_GET['msg']]) ? $flash[$_GET['msg']] : null;
                     <?php endif; ?>
                 </div>
                 <div class="req-body">
+                    <?php if($is_edit): ?>
+                        <span class="edit-badge"><i class="fas fa-pen-to-square"></i> Previously approved &middot; edited</span>
+                    <?php else: ?>
+                        <span class="edit-badge new-badge"><i class="fas fa-plus"></i> New submission</span>
+                    <?php endif; ?>
                     <h3><?php echo htmlspecialchars($house['description'] ?: ($house['category'] ?? 'New Listing')); ?></h3>
                     <div class="req-meta">
                         <span><i class="fas fa-tag"></i> <strong><?php echo htmlspecialchars($house['category'] ?? ''); ?></strong></span>
                         <span class="chip-price"><i class="fas fa-money-bill"></i> <?php echo number_format($house['amount'] ?? 0); ?> ETB</span>
-                        <span><i class="fas fa-user"></i> <?php echo htmlspecialchars($user['full_name'] ?? 'Unknown'); ?></span>
+                        <span><i class="fas fa-user"></i> <?php echo htmlspecialchars($req['owner_name'] ?? 'Unknown'); ?></span>
                     </div>
                 </div>
                 <div class="req-actions">
@@ -118,12 +130,20 @@ $msg = isset($_GET['msg'], $flash[$_GET['msg']]) ? $flash[$_GET['msg']] : null;
     <?php endif; ?>
 
     <?php
-    $pending_houses_q = "SELECT h.*, u.full_name FROM houses h LEFT JOIN requests r ON r.house_id = h.id LEFT JOIN users u ON h.user_id = u.id WHERE (h.status = 'Pending' OR h.is_approved = 0 OR h.is_approved IS NULL) AND r.id IS NULL ORDER BY h.created_at DESC";
+    $pending_houses_q = "SELECT h.*, u.full_name FROM houses h
+                         LEFT JOIN requests r ON r.house_id = h.id AND r.status = 0
+                         LEFT JOIN users u ON h.user_id = u.id
+                         WHERE (h.status = 'Pending' OR h.is_approved = 0 OR h.is_approved IS NULL)
+                           AND r.id IS NULL
+                         ORDER BY h.created_at DESC";
     $pending_res = mysqli_query($conn, $pending_houses_q);
     if($pending_res && mysqli_num_rows($pending_res) > 0): ?>
-        <div class="section-title"><i class="fas fa-clock"></i> Pending Listings (without request record)</div>
-        <?php while($house = mysqli_fetch_assoc($pending_res)): ?>
-            <div class="request-card">
+        <div class="section-title"><i class="fas fa-clock"></i> Pending Listings (need review)</div>
+        <?php while($house = mysqli_fetch_assoc($pending_res)):
+            $prev_app = mysqli_query($conn, "SELECT COUNT(*) FROM requests WHERE house_id=" . (int)$house['id'] . " AND status=1");
+            $was_prev_approved = ($prev_app && ($c = mysqli_fetch_row($prev_app)) && (int)$c[0] > 0);
+        ?>
+            <div class="request-card<?php echo $was_prev_approved ? ' card-edit' : ''; ?>">
                 <?php $photos = get_house_images($conn, $house['id']); $thumb = !empty($photos) ? $photos[0] : ''; $photo_count = count($photos); ?>
                 <div class="req-img">
                     <?php if(!empty($thumb)): ?>
@@ -134,6 +154,9 @@ $msg = isset($_GET['msg'], $flash[$_GET['msg']]) ? $flash[$_GET['msg']] : null;
                     <?php endif; ?>
                 </div>
                 <div class="req-body">
+                    <?php if($was_prev_approved): ?>
+                        <span class="edit-badge"><i class="fas fa-pen-to-square"></i> Previously approved &middot; edited</span>
+                    <?php endif; ?>
                     <h3><?php echo htmlspecialchars($house['description'] ?: 'New Listing'); ?></h3>
                     <div class="req-meta">
                         <span><i class="fas fa-tag"></i> <strong><?php echo htmlspecialchars($house['category']); ?></strong></span>

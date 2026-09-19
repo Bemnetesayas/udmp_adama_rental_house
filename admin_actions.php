@@ -61,16 +61,24 @@ switch($action){
         break;
 
     case 'approve_review':
+        $rt = mysqli_fetch_assoc(mysqli_query($conn, "SELECT type FROM requests WHERE house_id=$id AND status=0 ORDER BY id DESC LIMIT 1"));
+        $was_edit = ($rt && strtolower($rt['type']) === 'edit');
         mysqli_query($conn, "UPDATE houses SET status='Available', is_approved=1 WHERE id=$id");
         mysqli_query($conn, "UPDATE requests SET status=1 WHERE house_id=$id AND status=0");
-        notifyOwner($conn, $id, 'Listing approved', 'Your listing was approved and is now live on the marketplace.');
+        notifyOwner($conn, $id, 'Listing approved', $was_edit
+            ? 'Your updated listing was approved and is now live on the marketplace again.'
+            : 'Your listing was approved and is now live on the marketplace.');
         header("Location: admin_manage_requests.php?msg=approved");
         break;
 
     case 'reject_review':
+        $rt = mysqli_fetch_assoc(mysqli_query($conn, "SELECT type FROM requests WHERE house_id=$id AND status=0 ORDER BY id DESC LIMIT 1"));
+        $was_edit = ($rt && strtolower($rt['type']) === 'edit');
         mysqli_query($conn, "UPDATE houses SET status='Rejected', is_approved=0 WHERE id=$id");
         mysqli_query($conn, "UPDATE requests SET status=2 WHERE house_id=$id AND status=0");
-        notifyOwner($conn, $id, 'Listing rejected', 'Your listing was rejected. Please review and resubmit.');
+        notifyOwner($conn, $id, 'Listing rejected', $was_edit
+            ? 'Your updated listing was rejected. Please review the comments and resubmit.'
+            : 'Your listing was rejected. Please review and resubmit.');
         header("Location: admin_manage_requests.php?msg=rejected");
         break;
 

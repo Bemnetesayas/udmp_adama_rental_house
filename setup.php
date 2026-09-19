@@ -67,8 +67,19 @@ if (!$conn) {
         user_id INT NOT NULL,
         house_id INT NOT NULL,
         status INT DEFAULT 0,
+        type VARCHAR(20) DEFAULT 'new',
+        changes TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )");
+
+    $reqcols = @mysqli_query($conn, "SHOW COLUMNS FROM requests LIKE 'type'");
+    if (!$reqcols || mysqli_num_rows($reqcols) == 0) {
+        mysqli_query($conn, "ALTER TABLE requests ADD COLUMN type VARCHAR(20) DEFAULT 'new' AFTER status");
+    }
+    $reqccols = @mysqli_query($conn, "SHOW COLUMNS FROM requests LIKE 'changes'");
+    if (!$reqccols || mysqli_num_rows($reqccols) == 0) {
+        mysqli_query($conn, "ALTER TABLE requests ADD COLUMN changes TEXT AFTER type");
+    }
 
     mysqli_query($conn, "CREATE TABLE IF NOT EXISTS house_images (
         id INT AUTO_INCREMENT PRIMARY KEY,

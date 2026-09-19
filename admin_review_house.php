@@ -40,6 +40,24 @@ else $status_label = 'Pending';
 
 $is_pending = (strcasecmp($status_val,'Pending')===0 || (int)$house['is_approved'] === 0);
 $is_approved = (int)$house['is_approved'] === 1;
+
+$req_type = 'new';
+$changes = [];
+$rq = mysqli_query($conn, "SELECT type, changes FROM requests WHERE house_id=$id AND status=0 ORDER BY id DESC LIMIT 1");
+if($rq && $rrow = mysqli_fetch_assoc($rq)){
+    $req_type = strtolower($rrow['type'] ?? 'new');
+    if(!empty($rrow['changes'])){
+        $decoded = json_decode($rrow['changes'], true);
+        if(is_array($decoded)) $changes = $decoded;
+    }
+}
+$prev_app = mysqli_query($conn, "SELECT COUNT(*) FROM requests WHERE house_id=$id AND status=1");
+$was_prev_approved = ($prev_app && ($c = mysqli_fetch_row($prev_app)) && (int)$c[0] > 0);
+$is_edited = ($req_type === 'edit') || ($was_prev_approved && $is_pending && !$is_approved);
+
+$amenity_names = [];
+$anq = mysqli_query($conn, "SELECT id, name FROM amenities");
+if($anq){ while($a = mysqli_fetch_assoc($anq)) $amenity_names[(int)$a['id']] = $a['name']; }
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -83,6 +101,22 @@ $is_approved = (int)$house['is_approved'] === 1;
         .lb-dark{position:fixed;inset:0;z-index:10000;background:rgba(15,23,42,.93);display:none;align-items:center;justify-content:center;cursor:zoom-out}
         .lb-dark.open{display:flex}
         .lb-dark img{max-width:94vw;max-height:92vh;border-radius:8px}
+        .rv-changes{display:flex;flex-direction:column;gap:10px}
+        .rv-change{background:#f8fafc;border:1px solid #e2e8f0;border-left:3px solid #8b5cf6;border-radius:10px;padding:12px 14px}
+        .rv-change-field{font-size:12px;font-weight:800;color:#6d28d9;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px;display:flex;align-items:center;gap:7px}
+        .rv-change-field i{font-size:11px;opacity:.7}
+        .rv-change-body{display:flex;flex-wrap:wrap;align-items:center;gap:9px;font-size:13px}
+        .rv-old{color:#b91c1c;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);padding:5px 11px;border-radius:7px;text-decoration:line-through;text-decoration-color:rgba(185,28,28,.5);word-break:break-word}
+        .rv-new{color:#047857;background:rgba(16,185,129,.09);border:1px solid rgba(16,185,129,.22);padding:5px 11px;border-radius:7px;font-weight:600;word-break:break-word}
+        .rv-arrow{color:#94a3b8;font-size:13px}
+        .rv-muted{color:#94a3b8;font-size:12px}
+        .rv-tags{display:flex;flex-wrap:wrap;align-items:center;gap:7px;width:100%}
+        .rv-tags + .rv-tags{margin-top:6px}
+        .rv-tag-label{font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.3px}
+        .rv-tag{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px}
+        .rv-tag-add{background:rgba(16,185,129,.12);color:#047857;border:1px solid rgba(16,185,129,.25)}
+        .rv-tag-del{background:rgba(239,68,68,.1);color:#b91c1c;border:1px solid rgba(239,68,68,.22)}
+        .rv-change-line{display:flex;align-items:center;gap:9px}
     </style>
 </head>
 <body>
@@ -95,6 +129,88 @@ $is_approved = (int)$house['is_approved'] === 1;
                 <?php echo $is_approved ? 'Approved' : $status_label; ?>
             </span>
         </div>
+
+        <?php if($is_edited): ?>
+        <div style="display:flex;align-items:center;gap:12px;background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.25);color:#6d28d9;padding:14px 18px;border-radius:12px;font-size:14px;font-weight:600;margin-bottom:16px">
+            <i class="fas fa-pen-to-square" style="font-size:18px"></i>
+            This listing was previously approved and has been edited by the owner. Review the changes below before re-approving.
+        </div>
+        <?php endif; ?>
+
+        <?php if($is_edited && count($changes) > 0):
+            $short = function($v, $limit = 140){
+                $v = (string)$v;
+                if(mb_strlen($v) > $limit) return mb_substr($v, 0, $limit) . '…';
+                return $v;
+            };
+        ?>
+        <div class="rv-card" style="border-color:rgba(139,92,246,.3)">
+            <div class="rv-title"><i class="fas fa-code-compare"></i> Changes Made vs. Previously Approved (<?php echo count($changes); ?>)</div>
+            <div class="rv-changes">
+                <?php foreach($changes as $ch):
+                    $field = $ch['field'] ?? 'Field';
+                ?>
+                    <div class="rv-change">
+                        <div class="rv-change-field"><i class="fas fa-angle-right"></i> <?php echo htmlspecialchars($field); ?></div>
+                        <?php if(isset($ch['added']) && isset($ch['removed'])): ?>
+                            <div class="rv-change-body">
+                                <?php if($field === 'Amenities'): ?>
+                                    <?php if(!empty($ch['removed'])): ?>
+                                        <div class="rv-tags"><span class="rv-tag-label">Removed:</span>
+                                            <?php foreach($ch['removed'] as $aid): ?>
+                                                <span class="rv-tag rv-tag-del"><i class="fas fa-minus"></i> <?php echo htmlspecialchars($amenity_names[(int)$aid] ?? ('#' . $aid)); ?></span>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    <?php endif; ?>
+                                    <?php if(!empty($ch['added'])): ?>
+                                        <div class="rv-tags"><span class="rv-tag-label">Added:</span>
+                                            <?php foreach($ch['added'] as $aid): ?>
+                                                <span class="rv-tag rv-tag-add"><i class="fas fa-plus"></i> <?php echo htmlspecialchars($amenity_names[(int)$aid] ?? ('#' . $aid)); ?></span>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    <?php endif; ?>
+                                <?php else: ?>
+                                    <div class="rv-change-line">
+                                        <span class="rv-old"><?php echo (int)$ch['from']; ?> photo<?php echo (int)$ch['from'] == 1 ? '' : 's'; ?></span>
+                                        <i class="fas fa-arrow-right-long rv-arrow"></i>
+                                        <span class="rv-new"><?php echo (int)$ch['to']; ?> photo<?php echo (int)$ch['to'] == 1 ? '' : 's'; ?></span>
+                                    </div>
+                                    <?php if(!empty($ch['removed'])): ?>
+                                        <div style="font-size:12px;color:#94a3b8;margin-top:4px">Removed: <?php echo htmlspecialchars(implode(', ', array_map('basename', $ch['removed']))); ?></div>
+                                    <?php endif; ?>
+                                    <?php if(!empty($ch['added'])): ?>
+                                        <div style="font-size:12px;color:#94a3b8;margin-top:2px">Added: <?php echo htmlspecialchars(implode(', ', array_map('basename', $ch['added']))); ?></div>
+                                    <?php endif; ?>
+                                <?php endif; ?>
+                            </div>
+                        <?php else: ?>
+                            <div class="rv-change-body">
+                                <?php
+                                    $from = (string)($ch['from'] ?? '');
+                                    $to   = (string)($ch['to'] ?? '');
+                                    $is_img = ($field === 'Cover photo');
+                                ?>
+                                <?php if($from === ''): ?>
+                                    <span class="rv-new" style="font-weight:600"><?php echo $is_img ? 'New cover set' : 'Set to "' . htmlspecialchars($short($to)) . '"'; ?></span>
+                                <?php elseif($to === ''): ?>
+                                    <span class="rv-old"><?php echo $is_img ? 'Cover removed' : '"' . htmlspecialchars($short($from)) . '"'; ?></span> <span class="rv-muted">(cleared)</span>
+                                <?php else: ?>
+                                    <span class="rv-old">"<?php echo htmlspecialchars($short($from)); ?>"</span>
+                                    <i class="fas fa-arrow-right-long rv-arrow"></i>
+                                    <span class="rv-new">"<?php echo htmlspecialchars($short($to)); ?>"</span>
+                                <?php endif; ?>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php elseif($is_edited): ?>
+        <div class="rv-card">
+            <div class="rv-title"><i class="fas fa-code-compare"></i> Changes Made</div>
+            <p style="font-size:14px;color:#64748b;margin:0">The listing was re-submitted. Compare the details below against what you approved earlier.</p>
+        </div>
+        <?php endif; ?>
 
         <div class="rv-card">
             <div class="rv-title"><i class="fas fa-user-shield"></i> Submitted By (Landlord)</div>
