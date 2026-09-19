@@ -1,15 +1,22 @@
 <?php
-include('session_config.php');
+include('includes/session_config.php');
 session_start();
-include('db.php');
+include('includes/db.php');
+include('includes/security.php');
 
 if(!isset($_SESSION['is_admin']) || $_SESSION['is_admin'] < 1){
     header("Location: login.php");
     exit();
 }
 
-$action = $_GET['action'] ?? '';
-$id = (int)($_GET['id'] ?? 0);
+if(empty($_POST['action'])){
+    header("Location: admin_manage_requests.php");
+    exit();
+}
+csrf_validate();
+
+$action = $_POST['action'];
+$id = (int)($_POST['id'] ?? 0);
 
 function notifyOwner($conn, $house_id, $title, $message){
     $owner = mysqli_fetch_assoc(mysqli_query($conn, "SELECT user_id, kebele FROM houses WHERE id=$house_id"));
@@ -49,6 +56,20 @@ switch($action){
 
     case 'reject_house':
         mysqli_query($conn, "UPDATE houses SET status='Rejected', is_approved=0 WHERE id=$id");
+        notifyOwner($conn, $id, 'Listing rejected', 'Your listing was rejected. Please review and resubmit.');
+        header("Location: admin_manage_requests.php?msg=rejected");
+        break;
+
+    case 'approve_review':
+        mysqli_query($conn, "UPDATE houses SET status='Available', is_approved=1 WHERE id=$id");
+        mysqli_query($conn, "UPDATE requests SET status=1 WHERE house_id=$id AND status=0");
+        notifyOwner($conn, $id, 'Listing approved', 'Your listing was approved and is now live on the marketplace.');
+        header("Location: admin_manage_requests.php?msg=approved");
+        break;
+
+    case 'reject_review':
+        mysqli_query($conn, "UPDATE houses SET status='Rejected', is_approved=0 WHERE id=$id");
+        mysqli_query($conn, "UPDATE requests SET status=2 WHERE house_id=$id AND status=0");
         notifyOwner($conn, $id, 'Listing rejected', 'Your listing was rejected. Please review and resubmit.');
         header("Location: admin_manage_requests.php?msg=rejected");
         break;

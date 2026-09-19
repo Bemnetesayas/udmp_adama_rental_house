@@ -1,7 +1,8 @@
 <?php
-include('session_config.php');
+include('includes/session_config.php');
 session_start();
-include('db.php');
+include('includes/db.php');
+include('includes/security.php');
 
 if(!isset($_SESSION['user_id'])){
     header("Location: login.php");
@@ -9,12 +10,14 @@ if(!isset($_SESSION['user_id'])){
 }
 
 $me = (int)$_SESSION['user_id'];
-$house_id = (int)($_GET['id'] ?? 0);
+$house_id = (int)($_POST['id'] ?? 0);
 
 if($house_id <= 0){
     header("Location: manage_houses.php");
     exit();
 }
+
+csrf_validate();
 
 // Load the house, ensuring it belongs to the current user
 $row = mysqli_fetch_assoc(mysqli_query($conn, "SELECT status, is_approved FROM houses WHERE id=$house_id AND user_id=$me"));

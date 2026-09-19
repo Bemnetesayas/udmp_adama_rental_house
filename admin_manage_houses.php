@@ -1,7 +1,8 @@
 <?php
-include('session_config.php');
+include('includes/session_config.php');
 session_start();
-include('db.php');
+include('includes/db.php');
+include('includes/security.php');
 
 if(!isset($_SESSION['is_admin']) || $_SESSION['is_admin'] < 1) {
     header("Location: login.php");
@@ -31,7 +32,7 @@ $result = mysqli_query($conn, $sql);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $page_title; ?> - AdamaRent Admin</title>
-    <?php include(__DIR__ . '/header.php'); ?>
+    <?php include(__DIR__ . '/includes/header.php'); ?>
 </head>
 <body>
 <div class="content">
@@ -89,10 +90,11 @@ $result = mysqli_query($conn, $sql);
                     <td>
                         <div style="display:flex;gap:6px">
                         <button class="btn-icon btn-icon-view" title="View"
-                            onclick="showDetails('<?php echo addslashes($row['full_name']); ?>', '<?php echo number_format($row['amount']); ?>', '<?php echo addslashes($row['description'] ?? ''); ?>', '<?php echo $row['image']; ?>')">
+                            onclick="showDetails(<?php echo htmlspecialchars(json_encode((string)$row['full_name']), ENT_QUOTES); ?>, <?php echo htmlspecialchars(json_encode(number_format($row['amount'])), ENT_QUOTES); ?>, <?php echo htmlspecialchars(json_encode((string)($row['description'] ?? '')), ENT_QUOTES); ?>, <?php echo htmlspecialchars(json_encode((string)$row['image']), ENT_QUOTES); ?>)">
                             <i class="fas fa-eye"></i>
                         </button>
                         <form action="process_request.php" method="POST" style="display:inline" id="del-house-<?php echo $row['id']; ?>">
+                            <?php echo csrf_field(); ?>
                             <input type="hidden" name="id" value="<?php echo $row['id']; ?>">
                             <input type="hidden" name="action" value="delete_house">
                             <button type="button" class="btn-icon btn-icon-del" title="Delete" onclick="confirmListingDelete(<?php echo $row['id']; ?>)"><i class="fas fa-trash"></i></button>

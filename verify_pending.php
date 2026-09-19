@@ -1,8 +1,9 @@
 <?php
-include('session_config.php');
+include('includes/session_config.php');
 session_start();
-include('db.php');
-include('mail_helper.php');
+include('includes/db.php');
+include('includes/mail_helper.php');
+include('includes/security.php');
 
 $email = trim($_GET['email'] ?? '');
 if ($email === '' && isset($_SESSION['verify_pending_email'])) {
@@ -108,7 +109,8 @@ if (!mail_env_is_configured() && $email !== '') {
 
         <div class="actions">
             <form method="POST" action="resend_verification.php" style="display:inline-block">
-                <input type="hidden" name="email" value="<?php echo $email; ?>">
+                <?php echo csrf_field(); ?>
+                <input type="hidden" name="email" value="<?php echo htmlspecialchars($email); ?>">
                 <button type="submit" name="resend" class="btn">Resend verification link</button>
             </form>
             <a href="login.php" class="btn-line">Back to Sign In</a>

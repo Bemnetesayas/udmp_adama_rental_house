@@ -1,10 +1,11 @@
 <?php
-include('session_config.php');
+include('includes/session_config.php');
 session_start();
-include('db.php');
+include('includes/db.php');
+include('includes/security.php');
 
-// Must be logged in with a pending invite
-if(!isset($_SESSION['user_id']) || !isset($_SESSION['pending_admin_key'])){
+// Must be logged in
+if(!isset($_SESSION['user_id']) || (int)$_SESSION['user_id'] <= 0){
     header("Location: login.php");
     exit();
 }
@@ -13,7 +14,17 @@ $uid = (int)$_SESSION['user_id'];
 $error = '';
 $msg = '';
 
+// Auto-detect any pending invite for this user (no re-login required)
+$inv_check = mysqli_query($conn, "SELECT id FROM admin_invites WHERE user_id=$uid AND status='pending' LIMIT 1");
+if($inv_check && mysqli_num_rows($inv_check) > 0){
+    $_SESSION['pending_admin_key'] = 1;
+} elseif(!isset($_SESSION['pending_admin_key'])){
+    header("Location: index.php");
+    exit();
+}
+
 if($_SERVER['REQUEST_METHOD'] == 'POST'){
+    csrf_validate();
     $key = trim($_POST['key'] ?? '');
     $key_hash = hash('sha256', $key);
 
@@ -69,6 +80,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
         <?php if($error): ?><div class="error"><?php echo $error; ?></div><?php endif; ?>
 
         <form method="POST">
+            <?php echo csrf_field(); ?>
             <label>Admin Invite Key</label>
             <input type="text" name="key" placeholder="Paste key here" required autocomplete="off">
             <button type="submit" class="btn">Activate Admin Access</button>

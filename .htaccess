@@ -1,1 +1,29 @@
 DirectoryIndex Home.php
+Options -Indexes
+
+# Guard sensitive/config files from direct web access (server-side include() still works).
+<IfModule mod_authz_core.c>
+    <FilesMatch "\.(sql|log)$">
+        Require all denied
+    </FilesMatch>
+    <FilesMatch "^\.git">
+        Require all denied
+    </FilesMatch>
+    <FilesMatch "^(config_secrets|db|session_config|mail_helper)\.php$">
+        Require all denied
+    </FilesMatch>
+</IfModule>
+<IfModule !mod_authz_core.c>
+    <FilesMatch "\.(sql|log)$">
+        Order allow,deny
+        Deny from all
+    </FilesMatch>
+    <FilesMatch "^\.git">
+        Order allow,deny
+        Deny from all
+    </FilesMatch>
+    <FilesMatch "^(config_secrets|db|session_config|mail_helper)\.php$">
+        Order allow,deny
+        Deny from all
+    </FilesMatch>
+</IfModule>

@@ -1,4 +1,4 @@
-﻿<?php include('session_config.php'); session_start(); include('db.php');
+﻿<?php include('includes/session_config.php'); session_start(); include('includes/db.php');
 $total_houses  = (int) mysqli_fetch_row(mysqli_query($conn, "SELECT COUNT(*) FROM houses"))[0];
 $total_landlords = (int) mysqli_fetch_row(mysqli_query($conn, "SELECT COUNT(*) FROM users WHERE is_admin=0"))[0];
 $total_kebeles = (int) mysqli_fetch_row(mysqli_query($conn, "SELECT COUNT(DISTINCT kebele) FROM houses"))[0];
@@ -146,10 +146,10 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;color:#1e293b;overfl
     <div class="nav-links">
         <?php if(isset($_SESSION['user_id'])): ?>
             <div class="user-avatar-wrap">
-                <div class="user-avatar"><?php echo strtoupper(substr($_SESSION['user_name'] ?? 'U', 0, 1)); ?></div>
+                <div class="user-avatar"><?php echo htmlspecialchars(strtoupper(substr($_SESSION['user_name'] ?? 'U', 0, 1))); ?></div>
                 <div class="user-dropdown">
                     <div class="user-dropdown-header">
-                        <div class="user-avatar-sm"><?php echo strtoupper(substr($_SESSION['user_name'] ?? 'U', 0, 1)); ?></div>
+                        <div class="user-avatar-sm"><?php echo htmlspecialchars(strtoupper(substr($_SESSION['user_name'] ?? 'U', 0, 1))); ?></div>
                         <div><div class="user-dropdown-name"><?php echo htmlspecialchars($_SESSION['user_name'] ?? 'User'); ?></div>
                         <div class="user-dropdown-role"><?php echo isset($_SESSION['is_admin']) && $_SESSION['is_admin'] >= 1 ? 'Admin' : 'Landlord'; ?></div></div>
                     </div>

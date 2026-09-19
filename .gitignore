@@ -1,2 +1,9 @@
-uploads/
+uploads/*
+!uploads/.htaccess
+uploads/image_*
+
 config_secrets.php
+config_secrets.production.php
+
+logs/*
+!logs/.htaccess

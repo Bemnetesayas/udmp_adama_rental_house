@@ -1,7 +1,8 @@
 <?php
-include('session_config.php');
+include('includes/session_config.php');
 session_start();
-include('db.php');
+include('includes/db.php');
+include('includes/security.php');
 
 if(!isset($_SESSION['user_id'])){
     header("Location: login.php");
@@ -13,6 +14,7 @@ $notif = null; // ['type','title','message']
 $err = null;
 
 if($_SERVER['REQUEST_METHOD'] === 'POST'){
+    csrf_validate();
     $full_name = trim($_POST['full_name'] ?? '');
     $email     = trim($_POST['email'] ?? '');
     $phone     = trim($_POST['phone'] ?? '');
@@ -118,6 +120,7 @@ if(!$user){ header("Location: logout.php"); exit(); }
     </style>
 </head>
 <body>
+    <?php include(__DIR__ . '/pending_invite_notice.php'); ?>
     <nav class="navbar">
         <a href="Home.php" class="nav-brand">
             <div class="nav-brand-icon">AR</div>
@@ -135,7 +138,7 @@ if(!$user){ header("Location: logout.php"); exit(); }
         <?php endif; ?>
 
         <div class="profile-head">
-            <div class="profile-av"><?php echo strtoupper(substr($user['full_name'], 0, 1)); ?></div>
+            <div class="profile-av"><?php echo htmlspecialchars(strtoupper(substr($user['full_name'], 0, 1))); ?></div>
             <div>
                 <h1><?php echo htmlspecialchars($user['full_name']); ?></h1>
                 <div class="role-chip <?php echo (int)$user['is_admin'] >= 1 ? 'admin' : 'landlord'; ?>">
@@ -145,6 +148,7 @@ if(!$user){ header("Location: logout.php"); exit(); }
         </div>
 
         <form method="POST">
+                <?php echo csrf_field(); ?>
             <div class="card">
                 <h3><i class="fas fa-user-pen"></i> Personal Information</h3>
                 <p class="card-sub">Update your name, contact details and preferred contact numbers.</p>
@@ -206,6 +210,6 @@ if(!$user){ header("Location: logout.php"); exit(); }
         window.addEventListener('DOMContentLoaded', function(){ showToast(msg, <?php echo json_encode($notif['type']); ?>, <?php echo json_encode($notif['title']); ?>); });
         <?php endif; ?>
     </script>
-    <?php include(__DIR__ . '/popup.php'); ?>
+    <?php include(__DIR__ . '/includes/popup.php'); ?>
 </body>
 </html>

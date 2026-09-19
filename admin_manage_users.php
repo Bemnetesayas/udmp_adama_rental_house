@@ -1,7 +1,8 @@
 <?php
-include('session_config.php');
+include('includes/session_config.php');
 session_start();
-include('db.php');
+include('includes/db.php');
+include('includes/security.php');
 
 if(!isset($_SESSION['is_admin']) || $_SESSION['is_admin'] < 1){
     header("Location: login.php");
@@ -43,7 +44,7 @@ $msg = isset($_GET['msg'], $flash[$_GET['msg']]) ? $flash[$_GET['msg']] : null;
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $page_title; ?> - AdamaRent Admin</title>
-    <?php include(__DIR__ . '/header.php'); ?>
+    <?php include(__DIR__ . '/includes/header.php'); ?>
 </head>
 <body>
 <div class="content">
@@ -85,7 +86,7 @@ $msg = isset($_GET['msg'], $flash[$_GET['msg']]) ? $flash[$_GET['msg']] : null;
                 <?php while($row = mysqli_fetch_assoc($result)): 
                     $target_id = $row['id'];
                     $target_rank = $row['is_admin'];
-                    $initial = strtoupper(substr(trim($row['full_name'] ?? 'U'), 0, 1));
+                    $initial = htmlspecialchars(strtoupper(substr(trim($row['full_name'] ?? 'U'), 0, 1)));
                 ?>
                 <tr>
                     <td>
@@ -113,6 +114,7 @@ $msg = isset($_GET['msg'], $flash[$_GET['msg']]) ? $flash[$_GET['msg']] : null;
                             <a href="admin_invite.php" class="btn btn-sm btn-icon-promote" title="Generate an invite key to make this user an admin"><i class="fas fa-user-shield"></i> Invite as Admin</a>
                         <?php elseif($target_id != $my_id && $target_rank == 1): ?>
                             <form action="revoke_admin.php" method="POST" style="display:inline" id="revoke-user-<?php echo $target_id; ?>">
+                                <?php echo csrf_field(); ?>
                                 <input type="hidden" name="user_id" value="<?php echo $target_id; ?>">
                                 <button type="button" class="btn btn-sm btn-icon-revoke" title="Revoke admin role" onclick="confirmRevokeAdmin(<?php echo $target_id; ?>)"><i class="fas fa-user-slash"></i> Revoke Admin</button>
                             </form>
@@ -127,6 +129,7 @@ $msg = isset($_GET['msg'], $flash[$_GET['msg']]) ? $flash[$_GET['msg']] : null;
                         <a href="edit_user.php?id=<?php echo $target_id; ?>" class="btn-icon btn-icon-edit" title="Edit"><i class="fas fa-edit"></i></a>
                         <?php if($target_id != $my_id): ?>
                         <form action="delete_user.php" method="POST" style="display:inline" id="del-user-<?php echo $target_id; ?>">
+                            <?php echo csrf_field(); ?>
                             <input type="hidden" name="user_id" value="<?php echo $target_id; ?>">
                             <button type="button" class="btn-icon btn-icon-del" title="Delete" onclick="confirmUserDelete(<?php echo $target_id; ?>)"><i class="fas fa-trash"></i></button>
                         </form>

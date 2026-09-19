@@ -1,7 +1,7 @@
 <?php
 // Load optional secrets (gitignored). Falls back to empty constants.
-if (file_exists(__DIR__ . '/config_secrets.php')) {
-    require_once __DIR__ . '/config_secrets.php';
+if (file_exists(__DIR__ . '/../config/config_secrets.php')) {
+    require_once __DIR__ . '/../config/config_secrets.php';
 }
 if (!defined('BREVO_API_KEY')) {
     define('BREVO_API_KEY', '');
@@ -39,7 +39,7 @@ function log_mail_dev($subject, $to, $link = '', $note = '') {
         $entry .= " | $note";
     }
     $entry .= "\n";
-    @file_put_contents(__DIR__ . '/uploads/mail_log.txt', $entry, FILE_APPEND);
+    @file_put_contents(dirname(__DIR__) . '/logs/mail_log.txt', $entry, FILE_APPEND);
 }
 
 // POST to a URL with cURL. If the first attempt fails with an SSL error
@@ -147,7 +147,9 @@ function send_mail_brevo($toEmail, $toName, $subject, $htmlBody, $textBody = '')
     return ['ok' => false, 'info' => "brevo error $code"];
 }
 
-// Build + send a "verify your email" mail. Always logs the link locally (dev/testable).
+// Build + send a "verify your email" mail.
+// The verification link is logged locally ONLY when mail is not configured
+// (dev mode) — never when a real email is sent, so tokens can't leak from logs.
 function send_verification_email($email, $name, $token) {
     $link = app_base_url() . '/verify_email.php?token=' . urlencode($token);
     $subject = 'Verify your AdamaRent email address';
@@ -160,9 +162,9 @@ function send_verification_email($email, $name, $token) {
         . '</div>';
     $res = send_mail_brevo($email, $name, $subject, $html, "Verify your AdamaRent email: $link");
     if ($res['ok']) {
-        log_mail_dev($subject, $email, $link, 'sent via Brevo');
+        log_mail_dev($subject, $email, 'kept private in inbox', 'sent via Brevo');
     } else {
-        log_mail_dev($subject, $email, $link, $res['info'] === 'dev' ? 'mail not configured (dev link below)' : $res['info']);
+        log_mail_dev($subject, $email, $res['info'] === 'dev' ? $link : 'n/a', $res['info'] === 'dev' ? 'mail not configured (dev link below)' : $res['info']);
     }
     return $res;
 }

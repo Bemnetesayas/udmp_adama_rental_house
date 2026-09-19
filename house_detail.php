@@ -1,7 +1,9 @@
 <?php
-include('session_config.php');
+include('includes/session_config.php');
 session_start();
-include('db.php');
+include('includes/db.php');
+include('includes/security.php');
+if(!isset($_SESSION['csrf_token'])) csrf_token();
 
 function dTimeAgo($datetime){
     $diff = time() - strtotime($datetime);
@@ -55,7 +57,7 @@ if($house){
     }
 }
 $rentHref  = isset($_SESSION['user_id'])
-    ? 'rent_request.php?house=' . $id
+    ? '#rent'
     : 'login.php?redirect=' . urlencode('rent_request.php?house=' . $id);
 ?>
 <!DOCTYPE html>
@@ -177,6 +179,7 @@ $rentHref  = isset($_SESSION['user_id'])
     </style>
 </head>
 <body>
+    <?php include(__DIR__ . '/pending_invite_notice.php'); ?>
     <nav class="navbar">
         <a href="Home.php" class="nav-brand">
             <div class="nav-brand-icon">AR</div>
@@ -259,7 +262,7 @@ $rentHref  = isset($_SESSION['user_id'])
                 </div>
 
                 <div class="owner">
-                    <div class="owner-av"><?php echo strtoupper(substr($house['full_name'] ?? 'O', 0, 1)); ?></div>
+                    <div class="owner-av"><?php echo htmlspecialchars(strtoupper(substr($house['full_name'] ?? 'O', 0, 1))); ?></div>
                     <div>
                         <div class="owner-name"><?php echo htmlspecialchars($house['full_name'] ?? 'Property Owner'); ?></div>
                         <div class="owner-sub"><i class="fas fa-clock" style="margin-right:4px"></i>Listed <?php echo dTimeAgo($house['created_at']); ?></div>
@@ -330,7 +333,11 @@ $rentHref  = isset($_SESSION['user_id'])
                         onConfirm: function(){
                             var btn = link;
                             btn.disabled = true;
-                            fetch('rental_request_action.php?action=cancel&id=' + reqId, {headers: {'X-Requested-With': 'XMLHttpRequest'}})
+                            var body = new FormData();
+                            body.append('action', 'cancel');
+                            body.append('id', reqId);
+                            body.append('csrf_token', <?php echo json_encode($_SESSION['csrf_token']); ?>);
+                            fetch('rental_request_action.php', {method: 'POST', body: body, headers: {'X-Requested-With': 'XMLHttpRequest'}})
                                 .then(function(r){ return r.json(); })
                                 .then(function(data){
                                     showToast(data.message, data.type, data.title);
@@ -354,7 +361,10 @@ $rentHref  = isset($_SESSION['user_id'])
                         onConfirm: function(){
                             var btn = link;
                             btn.disabled = true;
-                            fetch('rent_request.php?house=<?php echo $id; ?>', {headers: {'X-Requested-With': 'XMLHttpRequest'}})
+                            var body = new FormData();
+                            body.append('house', <?php echo (int)$id; ?>);
+                            body.append('csrf_token', <?php echo json_encode($_SESSION['csrf_token']); ?>);
+                            fetch('rent_request.php', {method: 'POST', body: body, headers: {'X-Requested-With': 'XMLHttpRequest'}})
                                 .then(function(r){ return r.json(); })
                                 .then(function(data){
                                     if(data.type === 'login_needed'){ window.location = data.redirect; return; }
@@ -378,6 +388,6 @@ $rentHref  = isset($_SESSION['user_id'])
         }
         <?php endif; ?>
     </script>
-    <?php include(__DIR__ . '/popup.php'); ?>
+    <?php include(__DIR__ . '/includes/popup.php'); ?>
 </body>
 </html>
