@@ -124,6 +124,7 @@ endif;
     </style>
 </head>
 <body>
+    <?php include(__DIR__ . '/pending_invite_notice.php'); ?>
     <nav class="navbar">
         <a href="Home.php" class="nav-brand">
             <div class="nav-brand-icon">AR</div>
