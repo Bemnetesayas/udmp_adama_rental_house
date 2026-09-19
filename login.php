@@ -78,16 +78,14 @@ if(isset($_GET['google'])){
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         body{font-family:'Inter',system-ui,sans-serif;min-height:100vh;display:flex;background:#f8fafc}
-        .auth-left{flex:1;background:linear-gradient(135deg,#0f172a 0%,#134e4a 100%);display:flex;flex-direction:column;justify-content:center;align-items:center;padding:60px;color:#fff;position:relative;overflow:hidden}
-        .auth-left::before{content:'';position:absolute;width:500px;height:500px;border-radius:50%;background:rgba(13,148,136,.15);top:-100px;right:-100px}
-        .auth-left::after{content:'';position:absolute;width:300px;height:300px;border-radius:50%;background:rgba(45,212,191,.1);bottom:-50px;left:-50px}
-        .auth-left-content{position:relative;z-index:2;text-align:center;max-width:400px}
+        .auth-left{flex:1;background:url('images/IMG_7172.JPG') center/cover no-repeat;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:60px;color:#fff;position:relative;overflow:hidden}
+        .auth-left-content{position:relative;text-align:center;max-width:400px}
         .auth-left-content .logo{width:60px;height:60px;background:linear-gradient(135deg,#0d9488,#14b8a6);border-radius:16px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:24px;margin:0 auto 24px}
         .auth-left-content h2{font-size:28px;font-weight:800;margin-bottom:12px}
         .auth-left-content p{color:rgba(255,255,255,.7);font-size:15px;line-height:1.7}
-        .auth-left .features{margin-top:40px;text-align:left}
-        .auth-left .features li{list-style:none;padding:10px 0;color:rgba(255,255,255,.8);font-size:14px;display:flex;align-items:center;gap:12px}
-        .auth-left .features li i{color:#2dd4bf;font-size:16px}
+        .auth-left .features{margin-top:40px;text-align:left;display:grid;gap:8px}
+        .auth-left .features li{list-style:none;color:rgba(255,255,255,.95);font-size:16px;font-weight:600;display:flex;align-items:center;gap:14px}
+        .auth-left .features li i{width:40px;height:40px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#14b8a6;background:rgba(13,148,136,.25);border-radius:10px;font-size:17px}
         .auth-right{flex:1;display:flex;align-items:center;justify-content:center;padding:40px}
         .auth-card{width:100%;max-width:400px}
         .auth-card .back-link{display:inline-flex;align-items:center;gap:6px;color:#64748b;text-decoration:none;font-size:13px;font-weight:500;margin-bottom:24px;transition:color .2s}
@@ -132,11 +130,11 @@ if(isset($_GET['google'])){
         <div class="auth-left-content">
             <div class="logo">AR</div>
             <h2>Welcome to AdamaRent</h2>
-            <p>Sign in to manage your properties, track listings, and access your dashboard.</p>
+            <p>Create your account now and start renting out your properties — it's quick, easy, and free.</p>
             <ul class="features">
-                <li><i class="fas fa-check-circle"></i> Manage house listings</li>
-                <li><i class="fas fa-check-circle"></i> Track views and inquiries</li>
-                <li><i class="fas fa-check-circle"></i> Admin & landlord access</li>
+                <li><i class="fa-solid fa-house"></i> List unlimited properties.</li>
+                <li><i class="fa-solid fa-chart-line"></i> Reach local tenants seeking rentals.</li>
+                <li><i class="fa-solid fa-user-shield"></i> Free to get started, no upfront listing fees.</li>
             </ul>
         </div>
     </div>

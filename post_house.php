@@ -349,7 +349,7 @@ if(!isset($_SESSION['user_id'])){
         } else {
             $photos  = $_FILES['house_photos'];
             $names   = [];
-            $allowed = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+            $allowed = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'heic', 'heif'];
             $total   = count($photos['name']);
 
             for($i = 0; $i < $total; $i++){
@@ -371,7 +371,7 @@ if(!isset($_SESSION['user_id'])){
 
                 $ext = strtolower(pathinfo($photos['name'][$i], PATHINFO_EXTENSION));
                 if(!in_array($ext, $allowed, true)){
-                    $toast_error = 'Upload failed: Only JPG, PNG, WebP or GIF photos are allowed.';
+                    $toast_error = 'Upload failed: Only JPG, PNG, WebP, GIF, HEIC or HEIF photos are allowed.';
                     break;
                 }
 
@@ -379,6 +379,18 @@ if(!isset($_SESSION['user_id'])){
                 $target = $upload_dir . '/' . $fname;
 
                 if(move_uploaded_file($photos['tmp_name'][$i], $target)){
+                    if(in_array($ext, ['heic', 'heif'], true)){
+                        $jpgName = preg_replace('/\.(heic|heif)$/i', '', $fname) . '.jpg';
+                        $out = shell_exec("/usr/bin/sips -s format jpeg " . escapeshellarg($target) . " --out " . escapeshellarg($upload_dir . '/' . $jpgName) . " 2>&1");
+                        if($out !== null && file_exists($upload_dir . '/' . $jpgName) && filesize($upload_dir . '/' . $jpgName) > 0){
+                            @unlink($target);
+                            $fname = $jpgName;
+                        } else {
+                            @unlink($target);
+                            $toast_error = 'Upload failed: Could not convert HEIC photo to JPEG.';
+                            break;
+                        }
+                    }
                     $names[] = $fname;
                 } else {
                     $toast_error = 'Upload failed: move_uploaded_file returned false. Check server error log.';
