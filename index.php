@@ -414,6 +414,13 @@ $house_images = loadHouseImages($conn);
         </div>
     </div>
 
+    <div class="lb-overlay" id="lbOverlay">
+        <button class="lb-close" id="lbClose" aria-label="Close"><i class="fas fa-xmark"></i></button>
+        <button class="lb-nav lb-prev" id="lbPrev" aria-label="Previous"><i class="fas fa-chevron-left"></i></button>
+        <img id="lbImg" src="" alt="Property photo">
+        <button class="lb-nav lb-next" id="lbNext" aria-label="Next"><i class="fas fa-chevron-right"></i></button>
+    </div>
+
     <script>
     document.querySelectorAll('.card').forEach(function(card){
         card.addEventListener('click', function(e){
@@ -532,12 +539,5 @@ $house_images = loadHouseImages($conn);
     </script>
 
     <?php include('footer.php'); ?>
-
-    <div class="lb-overlay" id="lbOverlay">
-        <button class="lb-close" id="lbClose" aria-label="Close"><i class="fas fa-xmark"></i></button>
-        <button class="lb-nav lb-prev" id="lbPrev" aria-label="Previous"><i class="fas fa-chevron-left"></i></button>
-        <img id="lbImg" src="" alt="Property photo">
-        <button class="lb-nav lb-next" id="lbNext" aria-label="Next"><i class="fas fa-chevron-right"></i></button>
-    </div>
 </body>
 </html>
