@@ -19,6 +19,7 @@ $res_rented = mysqli_query($conn, "SELECT COUNT(*) as total FROM houses WHERE (s
 $occupied_units = $res_rented ? mysqli_fetch_assoc($res_rented)['total'] : 0;
 
 $pending_req = mysqli_num_rows(mysqli_query($conn, "SELECT id FROM requests WHERE status = 0"));
+$pending_edits = mysqli_num_rows(mysqli_query($conn, "SELECT DISTINCT house_id FROM requests WHERE status = 0 AND type = 'edit'"));
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -81,6 +82,13 @@ $pending_req = mysqli_num_rows(mysqli_query($conn, "SELECT id FROM requests WHER
                     <h3>Pending Approvals</h3>
                     <div class="number"><?php echo $pending_req; ?></div>
                     <i class="fas fa-hourglass-half"></i>
+                </div>
+            </a>
+            <a href="admin_manage_requests.php" class="stat-link">
+                <div class="stat-box accent-violet">
+                    <h3>Edit Pending</h3>
+                    <div class="number"><?php echo $pending_edits; ?></div>
+                    <i class="fas fa-pen-to-square"></i>
                 </div>
             </a>
         </section>

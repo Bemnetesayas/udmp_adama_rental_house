@@ -117,12 +117,14 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#0d9488;box-sh
 .accent-green{border-top:3px solid #10b981}
 .accent-orange{border-top:3px solid #f59e0b}
 .accent-red{border-top:3px solid #ef4444}
+.accent-violet{border-top:3px solid #7c3aed}
 .accent-blue .number{color:#0d9488}
 .accent-purple .number{color:#8b5cf6}
 .accent-dark .number{color:#0f172a}
 .accent-green .number{color:#10b981}
 .accent-orange .number{color:#f59e0b}
 .accent-red .number{color:#ef4444}
+.accent-violet .number{color:#7c3aed}
 .info-bar{margin-top:32px;background:#fff;border:1px solid #e2e8f0;padding:20px;border-radius:14px;font-size:14px;color:#475569;display:flex;align-items:center;gap:16px}
 .info-bar .info-icon{background:linear-gradient(135deg,#0d9488,#14b8a6);color:#fff;width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 
